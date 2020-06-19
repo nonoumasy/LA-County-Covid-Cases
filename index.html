@@ -84,7 +84,7 @@
 
 
 <style>
-    .gradient-bar.bordered, .legend-key.bordered { border: solid #191925 1px; }
+    .gradient-bar.bordered, .legend-key.bordered { border: solid #191925 0.5px; }
 </style>
 
 
@@ -462,7 +462,7 @@ function generatePropertyExpression(expressionType, propertyValue, stops, defaul
             },
             "paint": {
                 "text-halo-color": "#ffffff",
-                "text-halo-width": generatePropertyExpression('interpolate', 'zoom', [[0,2], [18,5* 2]]),
+                "text-halo-width": generatePropertyExpression('interpolate', 'zoom', [[0,1], [18,5* 1]]),
                 "text-color": ["case",
                     ["boolean", ["feature-state", "hover"], false], 
                     "black", 
@@ -488,7 +488,7 @@ function generatePropertyExpression(expressionType, propertyValue, stops, defaul
                     ["boolean", ["feature-state", "hover"], false], 
                     "black", 
                     "#191925"],
-                "circle-stroke-width": generatePropertyExpression('interpolate', 'zoom', [[0,1], [18,5* 1]]),
+                "circle-stroke-width": generatePropertyExpression('interpolate', 'zoom', [[0,0.5], [18,5* 0.5]]),
                 "circle-opacity" : 1,
                 "circle-stroke-opacity" : 1
             }
