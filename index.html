@@ -1,708 +1,566 @@
 ﻿<!DOCTYPE html>
 <html>
-
 <head>
-    <title>Los Angeles Covid Map ▲⚬▲⚬</title>
-    <meta charset='UTF-8' />
-    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-    <script type='text/javascript' src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.0.0/mapbox-gl.js'></script>
-    <link type='text/css' href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.0.0/mapbox-gl.css' rel='stylesheet' />
+<title>mapboxgl-jupyter viz</title>
+<meta charset='UTF-8' />
+<meta name='viewport'
+      content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script type='text/javascript'
+        src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.0.0/mapbox-gl.js'></script>
+<link type='text/css'
+      href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.0.0/mapbox-gl.css' 
+      rel='stylesheet' />
 
-    <style type='text/css'>
-        body {
-            margin: 0;
-            padding: 0;
-        }
+<style type='text/css'>
+    body { margin:0; padding:0; }
+    .map { position: absolute; top:0; bottom:0; width:100%; }
+    .legend {
+        background-color: white;
+        color: #6e6e6e;
+        border-radius: 3px;
+        bottom: 10px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        padding: 0;
+        position: absolute;
+        right: 10px;
+        z-index: 1;
+        min-width: 100px;
+    }
+   .legend.horizontal {bottom: 10px; text-align: left;}
 
-        .map {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-        }
+    /* legend header */
+    .legend .legend-header { border-radius: 3px 3px 0 0; background: white; }
+    .legend .legend-title {
+        padding: 6px 12px 6px 12px;
+        text-shadow: 0 0 2px white;
+        text-transform: capitalize;
+        text-align: center;
+        font-weight: bold !important;
+        font-size: 14px;
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        max-width: 160px;
+    }
+    .legend-title {padding: 6px 12px 6px 12px; text-shadow: 0 0 2px #FFF; text-transform: capitalize; text-align: center; max-width: 160px; font-size: 0.9em; font-weight: bold;}
+    .legend.horizontal .legend-title {text-align: left;}
 
-        .legend {
-            background-color: white;
-            color: #6e6e6e;
-            border-radius: 3px;
-            bottom: 10px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
-            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
-            padding: 0;
-            position: absolute;
-            right: 10px;
-            z-index: 1;
-            min-width: 100px;
-        }
+    /* legend items */
+    .legend-content {margin: 6px 12px 6px 12px; overflow: hidden; padding: 0; float: left; list-style: none; font-size: 0.8em;}
+    .legend.vertical .legend-item {white-space: nowrap;}
+    .legend-value {display: inline-block; line-height: 18px; vertical-align: top;}
+    .legend.horizontal ul.legend-content li.legend-item .legend-value,
+    .legend.horizontal ul.legend-content li.legend-item {display: inline-block; float: left; width: 30px; margin-bottom: 0; text-align: center; min-height: 30px;}
 
-        .legend.horizontal {
-            bottom: 10px;
-            text-align: left;
-        }
+    /* legend key styles */
+    .legend-key {display: inline-block; height: 10px;}
+    .legend-key.default, .legend-key.square {border-radius: 0;}
+    .legend-key.circle {border-radius: 50%;}
+    .legend-key.rounded-square {border-radius: 20%;}
+    .legend.vertical .legend-key {width: 10px; margin-right: 5px; margin-left: 1px;}
+    .legend.horizontal .legend-key {width: 30px; margin-right: 0; margin-top: 1px; float: left;}
+    .legend.horizontal .legend-key.square, .legend.horizontal .legend-key.rounded-square, .legend.horizontal .legend-key.circle {margin-left: 10px; width: 10px;}
+    .legend.horizontal .legend-key.line {margin-left: 5px;}
+    .legend.horizontal .legend-key.line, .legend.vertical .legend-key.line {border-radius: 10%; width: 20px; height: 3px; margin-bottom: 2px;}
 
-        /* legend header */
-        .legend .legend-header {
-            border-radius: 3px 3px 0 0;
-            background: white;
-        }
+    /* gradient bar alignment */
+    .gradient-bar {margin: 6px 12px 6px 12px;}
+    .legend.horizontal .gradient-bar {width: 88%; height: 10px;}
+    .legend.vertical .gradient-bar {width: 10px; min-height: 50px; position: absolute; bottom: 4px;}
 
-        .legend .legend-title {
-            padding: 6px 12px 6px 12px;
-            text-shadow: 0 0 2px white;
-            text-transform: capitalize;
-            text-align: center;
-            font-weight: bold !important;
-            font-size: 14px;
-            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
-            max-width: 160px;
-        }
+    /* contiguous vertical bars (discrete) */
+    .legend.vertical.contig .legend-key {height: 15px; width: 10px;}
+    .legend.vertical.contig li.legend-item {height: 15px;}
+    .legend.vertical.contig {padding-bottom: 6px;}
 
-        .legend-title {
-            padding: 6px 12px 6px 12px;
-            text-shadow: 0 0 2px #FFF;
-            text-transform: capitalize;
-            text-align: center;
-            max-width: 160px;
-            font-size: 0.9em;
-            font-weight: bold;
-        }
+    /* vertical radius legend */
+    .legend.horizontal.legend-variable-radius ul.legend-content li.legend-item .legend-value,
+    .legend.horizontal.legend-variable-radius ul.legend-content li.legend-item {width: 30px; min-height: 20px;}
 
-        .legend.horizontal .legend-title {
-            text-align: left;
-        }
-
-        /* legend items */
-        .legend-content {
-            margin: 6px 12px 6px 12px;
-            overflow: hidden;
-            padding: 0;
-            float: left;
-            list-style: none;
-            font-size: 0.8em;
-        }
-
-        .legend.vertical .legend-item {
-            white-space: nowrap;
-        }
-
-        .legend-value {
-            display: inline-block;
-            line-height: 18px;
-            vertical-align: top;
-        }
-
-        .legend.horizontal ul.legend-content li.legend-item .legend-value,
-        .legend.horizontal ul.legend-content li.legend-item {
-            display: inline-block;
-            width: 30px;
-            margin-bottom: 0;
-            text-align: center;
-            min-height: 30px;
-        }
-
-        /* legend key styles */
-        .legend-key {
-            display: inline-block;
-            height: 10px;
-        }
-
-        .legend-key.default,
-        .legend-key.square {
-            border-radius: 0;
-        }
-
-        .legend-key.circle {
-            border-radius: 50%;
-        }
-
-        .legend-key.rounded-square {
-            border-radius: 20%;
-        }
-
-        .legend.vertical .legend-key {
-            width: 10px;
-            margin-right: 5px;
-            margin-left: 1px;
-        }
-
-        .legend.horizontal .legend-key {
-            width: 30px;
-            margin-right: 0;
-            margin-top: 1px;
-            float: left;
-        }
-
-        .legend.horizontal .legend-key.square,
-        .legend.horizontal .legend-key.rounded-square,
-        .legend.horizontal .legend-key.circle {
-            margin-left: 10px;
-            width: 10px;
-        }
-
-        .legend.horizontal .legend-key.line {
-            margin-left: 5px;
-        }
-
-        .legend.horizontal .legend-key.line,
-        .legend.vertical .legend-key.line {
-            border-radius: 10%;
-            width: 20px;
-            height: 3px;
-            margin-bottom: 2px;
-        }
-
-        /* gradient bar alignment */
-        .gradient-bar {
-            margin: 6px 12px 6px 12px;
-        }
-
-        .legend.horizontal .gradient-bar {
-            width: 88%;
-            height: 10px;
-        }
-
-        .legend.vertical .gradient-bar {
-            width: 10px;
-            min-height: 50px;
-            position: absolute;
-            bottom: 4px;
-        }
-
-        /* contiguous vertical bars (discrete) */
-        .legend.vertical.contig .legend-key {
-            height: 15px;
-            width: 10px;
-        }
-
-        .legend.vertical.contig li.legend-item {
-            height: 15px;
-        }
-
-        .legend.vertical.contig {
-            padding-bottom: 6px;
-        }
-
-        /* vertical radius legend */
-        .legend.horizontal.legend-variable-radius ul.legend-content li.legend-item .legend-value,
-        .legend.horizontal.legend-variable-radius ul.legend-content li.legend-item {
-            width: 30px;
-            min-height: 20px;
-        }
-
-        /* scale annotation */
-        .mapboxgl-ctrl.mapboxgl-ctrl-scale {
-            border-color: #6e6e6e;
-            background-color: white;
-            color: #131516;
-        }
-
-        .title-main {
-            background: #191925;
-            opacity: .9;
-            font-family: Arial, Helvetica, sans-serif;
-            padding: 20px;
-            margin: 20px;
-            color: white;
-            font-size: 1.5rem;
-            position: absolute;
-            z-index: 99;
-        }
-
-        li {
-            list-style-type: none;
-        }
-
-        mapboxgl-popup {
-            padding: 20px;
-        }
-    </style>
+    /* scale annotation */
+    .mapboxgl-ctrl.mapboxgl-ctrl-scale { border-color: #6e6e6e; 
+                                         background-color: white; 
+                                         color: #131516; }
+</style>
 
 
-    <style>
-        .gradient-bar.bordered,
-        .legend-key.bordered {
-            border: solid #191925 0.5px;
-        }
-    </style>
+<style>
+    .gradient-bar.bordered, .legend-key.bordered { border: solid #191925 0.5px; }
+</style>
 
 
 </head>
-
 <body>
 
+<div id='map' class='map'></div>
 
-    <div id='map' class='map'></div>
-    <div class="title-main">Los Angeles Covid Map ▲⚬▲⚬</div>
+<script type='text/javascript'>
 
-    <script type='text/javascript'>
+var legendHeader;
 
-        var legendHeader;
+function calcColorLegend(myColorStops, title) {
+    // create legend
+    var legend = document.createElement('div'),
+        legendContainer = document.getElementsByClassName('mapboxgl-ctrl-bottom-right')[0];
 
-        function calcColorLegend(myColorStops, title) {
-            // create legend
-            var legend = document.createElement('div'),
-                legendContainer = document.getElementsByClassName('mapboxgl-ctrl-bottom-right')[0];
-
-            if ('circle' === 'contiguous-bar') {
-                legend.className = 'legend vertical contig';
+    if ('circle' === 'contiguous-bar') {
+        legend.className = 'legend vertical contig';
+    }
+    else {
+        legend.className = 'legend vertical';
+    }
+    legend.id = 'legend-0';
+    document.body.appendChild(legend);
+    // add legend header and content elements
+    var mytitle = document.createElement('div'),
+        legendContent = document.createElement('ul');
+    legendHeader = document.createElement('div');
+    mytitle.textContent = title;
+    mytitle.className = 'legend-title'
+    legendHeader.className = 'legend-header'
+    legendContent.className = 'legend-content'
+    legendHeader.appendChild(mytitle);
+    legend.appendChild(legendHeader);
+    legend.appendChild(legendContent);
+    if (false === true) {
+        var gradientText = 'linear-gradient(to right, ',
+            gradient = document.createElement('div');
+        gradient.className = 'gradient-bar';
+        legend.appendChild(gradient);
+    }
+    // calculate a legend entries on a Mapbox GL Style Spec property function stops array
+    for (p = 0; p < myColorStops.length; p++) {
+        if (!!document.getElementById('legend-color-points-value-' + p)) {
+            // update the legend if it already exists
+            document.getElementById('legend-color-points-value-' + p).textContent = myColorStops[p][0];
+            document.getElementById('legend-color-points-id-' + p).style.backgroundColor = myColorStops[p][1];
+        }
+        else {
+            // create the legend if it doesn't yet exist
+            var item = document.createElement('li');
+            item.className = 'legend-item';
+            var key = document.createElement('span');
+            key.className = 'legend-key circle';
+            key.id = 'legend-color-points-id-' + p;
+            key.style.backgroundColor = myColorStops[p][1];
+            var value = document.createElement('span');
+            value.className = 'legend-value';
+            value.id = 'legend-color-points-value-' + p;
+            item.appendChild(key);
+            item.appendChild(value);
+            legendContent.appendChild(item);
+            
+            data = document.getElementById('legend-color-points-value-' + p)
+            // round number values in legend if precision defined
+            if ((typeof(myColorStops[p][0]) == 'number') && (typeof(null) == 'number')) {
+                data.textContent = myColorStops[p][0].toFixed(null);
             }
             else {
-                legend.className = 'legend vertical';
+                data.textContent = myColorStops[p][0];
             }
-            legend.id = 'legend-0';
-            document.body.appendChild(legend);
-            // add legend header and content elements
-            var mytitle = document.createElement('div'),
-                legendContent = document.createElement('ul');
-            legendHeader = document.createElement('div');
-            mytitle.textContent = title;
-            mytitle.className = 'legend-title'
-            legendHeader.className = 'legend-header'
-            legendContent.className = 'legend-content'
-            legendHeader.appendChild(mytitle);
-            legend.appendChild(legendHeader);
-            legend.appendChild(legendContent);
+            // add color stop to gradient list
             if (false === true) {
-                var gradientText = 'linear-gradient(to right, ',
-                    gradient = document.createElement('div');
-                gradient.className = 'gradient-bar';
-                legend.appendChild(gradient);
-            }
-            // calculate a legend entries on a Mapbox GL Style Spec property function stops array
-            for (p = 0; p < myColorStops.length; p++) {
-                if (!!document.getElementById('legend-color-points-value-' + p)) {
-                    // update the legend if it already exists
-                    document.getElementById('legend-color-points-value-' + p).textContent = myColorStops[p][0];
-                    document.getElementById('legend-color-points-id-' + p).style.backgroundColor = myColorStops[p][1];
+                if (p < myColorStops.length - 1) {
+                    gradientText = gradientText + myColorStops[p][1] + ', ';
                 }
                 else {
-                    // create the legend if it doesn't yet exist
-                    var item = document.createElement('li');
-                    item.className = 'legend-item';
-                    var key = document.createElement('span');
-                    key.className = 'legend-key circle';
-                    key.id = 'legend-color-points-id-' + p;
-                    key.style.backgroundColor = myColorStops[p][1];
-                    var value = document.createElement('span');
-                    value.className = 'legend-value';
-                    value.id = 'legend-color-points-value-' + p;
-                    item.appendChild(key);
-                    item.appendChild(value);
-                    legendContent.appendChild(item);
-
-                    data = document.getElementById('legend-color-points-value-' + p)
-                    // round number values in legend if precision defined
-                    if ((typeof (myColorStops[p][0]) == 'number') && (typeof (null) == 'number')) {
-                        data.textContent = myColorStops[p][0].toFixed(null);
-                    }
-                    else {
-                        data.textContent = myColorStops[p][0];
-                    }
-                    // add color stop to gradient list
-                    if (false === true) {
-                        if (p < myColorStops.length - 1) {
-                            gradientText = gradientText + myColorStops[p][1] + ', ';
-                        }
-                        else {
-                            gradientText = gradientText + myColorStops[p][1] + ')';
-                        }
-                        if ('vertical' === 'vertical') {
-                            gradientText = gradientText.replace('to right', 'to bottom');
-                        }
-                    }
-                }
-            }
-            if (false === true) {
-                // convert to gradient scale appearance
-                gradient.style.background = gradientText;
-                // hide legend keys generated above
-                var keys = document.getElementsByClassName('legend-key');
-                for (var i = 0; i < keys.length; i++) {
-                    keys[i].style.visibility = 'hidden';
+                    gradientText = gradientText + myColorStops[p][1] + ')';
                 }
                 if ('vertical' === 'vertical') {
-                    gradient.style.height = (legendContent.offsetHeight - 6) + 'px';
-                }
-            }
-            // add class for styling bordered legend keys
-            if (true) {
-                var keys = document.getElementsByClassName('legend-key');
-                for (var i = 0; i < keys.length; i++) {
-                    if (keys[i]) {
-                        keys[i].classList.add('bordered');
-                    }
-                }
-                var gradientBars = document.getElementsByClassName('gradient-bar');
-                for (var i = 0; i < keys.length; i++) {
-                    if (gradientBars[i]) {
-                        gradientBars[i].classList.add('bordered');
-                    }
-                }
-            }
-            // update right-margin for compact Mapbox attribution based on calculated legend width
-            updateAttribMargin(legend);
-            updateLegendMargin(legend);
-        }
-
-
-        function calcRadiusLegend(myRadiusStops, title, color) {
-
-            // maximum legend item height
-            var maxLegendItemHeight = 2 * myRadiusStops[myRadiusStops.length - 1][1];
-
-            // create legend
-            var legend = document.createElement('div');
-            legend.className = 'legend vertical legend-variable-radius';
-
-            legend.id = 'legend-1';
-            document.body.appendChild(legend);
-
-            // add legend header and content elements
-            var mytitle = document.createElement('div'),
-                legendContent = document.createElement('ul');
-            legendHeader = document.createElement('div');
-            mytitle.textContent = title;
-            mytitle.className = 'legend-title'
-            legendHeader.className = 'legend-header'
-            legendContent.className = 'legend-content'
-            legendHeader.appendChild(mytitle);
-            legend.appendChild(legendHeader);
-            legend.appendChild(legendContent);
-
-            // calculate a legend entries on a Mapbox GL Style Spec property function stops array
-            for (p = 0; p < myRadiusStops.length; p++) {
-                if (!!document.getElementById('legend-radius-points-value-' + p)) {
-                    //update the legend if it already exists
-                    document.getElementById('legend-radius-points-value-' + p).textContent = myRadiusStops[p][0];
-                    document.getElementById('legend-radius-points-id-' + p).style.backgroundColor = color;
-                }
-                else {
-                    // create the legend if it doesn't yet exist
-                    var item = document.createElement('li');
-                    item.className = 'legend-item';
-                    item.height = '' + maxLegendItemHeight + 'px';
-
-                    var key = document.createElement('span');
-                    key.className = 'legend-key circle';
-                    key.id = 'legend-radius-points-id-' + p;
-                    key.style.backgroundColor = color;
-
-                    key.style.width = '' + myRadiusStops[p][1] * 2 + 'px';
-                    key.style.height = '' + myRadiusStops[p][1] * 2 + 'px';
-
-                    keyVerticalMargin = (maxLegendItemHeight - myRadiusStops[p][1] * 2) * 0.5;
-                    key.style.marginTop = '' + keyVerticalMargin + 'px';
-                    key.style.marginBottom = '' + keyVerticalMargin + 'px';
-
-                    var value = document.createElement('span');
-                    value.className = 'legend-value';
-                    value.id = 'legend-radius-points-value-' + p;
-
-                    item.appendChild(key);
-                    item.appendChild(value);
-                    legendContent.appendChild(item);
-
-                    data = document.getElementById('legend-radius-points-value-' + p)
-
-                    // round number values in legend if precision defined
-                    if ((typeof (myRadiusStops[p][0]) == 'number') && (typeof (null) == 'number')) {
-                        data.textContent = myRadiusStops[p][0].toFixed(null);
-                    }
-                    else {
-                        data.textContent = myRadiusStops[p][0];
-                    }
-                }
-            }
-
-            // add class for styling bordered legend keys
-            if (true) {
-                var keys = document.getElementsByClassName('legend-key');
-                for (var i = 0; i < keys.length; i++) {
-                    if (keys[i]) {
-                        keys[i].classList.add('bordered');
-                    }
-                }
-            }
-
-            // update right-margin for compact Mapbox attribution based on calculated legend width
-            updateAttribMargin(legend);
-            updateLegendMargin(legend);
-
-        }
-
-
-        function updateAttribMargin(legend) {
-
-            // default margin is based on calculated legend width
-            var attribMargin = legend.offsetWidth + 15;
-
-            // if horizontal legend layout (multiple legends are stacked vertically)
-            if ('vertical' === 'horizontal') {
-                document.getElementsByClassName('mapboxgl-ctrl-attrib')[0].style.marginRight = (attribMargin).toString() + 'px';
-            }
-            // vertical legend layout means multiple legends are side-by-side
-            else if ('vertical' === 'vertical') {
-                var currentMargin = Number(document.getElementsByClassName('mapboxgl-ctrl-attrib')[0].style.marginRight.replace('px', ''));
-                document.getElementsByClassName('mapboxgl-ctrl-attrib')[0].style.marginRight = (attribMargin + currentMargin).toString() + 'px';
-            }
-        }
-
-
-        function updateLegendMargin(legend) {
-
-            var verticalLegends = document.getElementsByClassName('legend vertical'),
-                horizontalLegends = document.getElementsByClassName('legend horizontal');
-
-            if (verticalLegends.length > 1) {
-                for (i = 1; i < verticalLegends.length; i++) {
-                    verticalLegends[i].style.marginRight = (legend.offsetWidth - 5).toString() + 'px';
-                    var legend = verticalLegends[i];
-                }
-            }
-            else if (horizontalLegends.length > 1) {
-                for (i = 1; i < horizontalLegends.length; i++) {
-                    horizontalLegends[i].style.marginBottom = (legend.offsetHeight + 15).toString() + 'px';
-                    var legend = horizontalLegends[i];
+                    gradientText = gradientText.replace('to right', 'to bottom');
                 }
             }
         }
-
-
-        function generateInterpolateExpression(propertyValue, stops) {
-            var expression;
-            if (propertyValue == 'zoom') {
-                expression = ['interpolate', ['exponential', 1.2], ['zoom']]
+    }
+    if (false === true) {
+        // convert to gradient scale appearance
+        gradient.style.background = gradientText;
+        // hide legend keys generated above
+        var keys = document.getElementsByClassName('legend-key');
+        for (var i=0; i < keys.length; i++) {
+            keys[i].style.visibility = 'hidden';
+        }
+        if ('vertical' === 'vertical') {
+            gradient.style.height = (legendContent.offsetHeight - 6) + 'px';
+        }
+    }
+    // add class for styling bordered legend keys
+    if (true) {
+        var keys = document.getElementsByClassName('legend-key');
+        for (var i=0; i < keys.length; i++) {
+            if (keys[i]) {
+                keys[i].classList.add('bordered');
             }
-            else if (propertyValue == 'heatmap-density') {
-                expression = ['interpolate', ['linear'], ['heatmap-density']]
+        }
+        var gradientBars = document.getElementsByClassName('gradient-bar');
+        for (var i=0; i < keys.length; i++) {
+            if (gradientBars[i]) {
+                gradientBars[i].classList.add('bordered');
+            }
+        }
+    }
+    // update right-margin for compact Mapbox attribution based on calculated legend width
+    updateAttribMargin(legend);
+    updateLegendMargin(legend);
+}
+
+
+function calcRadiusLegend(myRadiusStops, title, color) {
+
+    // maximum legend item height
+    var maxLegendItemHeight = 2 * myRadiusStops[myRadiusStops.length - 1][1];
+
+    // create legend
+    var legend = document.createElement('div');
+    legend.className = 'legend vertical legend-variable-radius';
+
+    legend.id = 'legend-1';
+    document.body.appendChild(legend);
+
+    // add legend header and content elements
+    var mytitle = document.createElement('div'),
+        legendContent = document.createElement('ul');
+    legendHeader = document.createElement('div');
+    mytitle.textContent = title;
+    mytitle.className = 'legend-title'
+    legendHeader.className = 'legend-header'
+    legendContent.className = 'legend-content'
+    legendHeader.appendChild(mytitle);
+    legend.appendChild(legendHeader);
+    legend.appendChild(legendContent);
+
+    // calculate a legend entries on a Mapbox GL Style Spec property function stops array
+    for (p = 0; p < myRadiusStops.length; p++) {
+        if (!!document.getElementById('legend-radius-points-value-' + p)) {
+            //update the legend if it already exists
+            document.getElementById('legend-radius-points-value-' + p).textContent = myRadiusStops[p][0];
+            document.getElementById('legend-radius-points-id-' + p).style.backgroundColor = color;
+        }
+        else {
+            // create the legend if it doesn't yet exist
+            var item = document.createElement('li');
+            item.className = 'legend-item';
+            item.height = '' + maxLegendItemHeight + 'px';
+
+            var key = document.createElement('span');
+            key.className = 'legend-key circle';
+            key.id = 'legend-radius-points-id-' + p;
+            key.style.backgroundColor = color;   
+
+            key.style.width = '' + myRadiusStops[p][1] * 2 + 'px';
+            key.style.height = '' + myRadiusStops[p][1] * 2 + 'px';
+
+            keyVerticalMargin = (maxLegendItemHeight - myRadiusStops[p][1] * 2) * 0.5;
+            key.style.marginTop = '' + keyVerticalMargin + 'px';
+            key.style.marginBottom = '' + keyVerticalMargin + 'px';
+
+            var value = document.createElement('span');
+            value.className = 'legend-value';
+            value.id = 'legend-radius-points-value-' + p;
+
+            item.appendChild(key);
+            item.appendChild(value);
+            legendContent.appendChild(item);
+            
+            data = document.getElementById('legend-radius-points-value-' + p)
+
+            // round number values in legend if precision defined
+            if ((typeof(myRadiusStops[p][0]) == 'number') && (typeof(null) == 'number')) {
+                data.textContent = myRadiusStops[p][0].toFixed(null);
             }
             else {
-                expression = ['interpolate', ['linear'], ['get', propertyValue]]
+                data.textContent = myRadiusStops[p][0];
             }
-
-            for (var i = 0; i < stops.length; i++) {
-                expression.push(stops[i][0], stops[i][1])
-            }
-            return expression
         }
+    }
 
-
-        function generateMatchExpression(propertyValue, stops, defaultValue) {
-            var expression;
-            expression = ['match', ['get', propertyValue]]
-            for (var i = 0; i < stops.length; i++) {
-                expression.push(stops[i][0], stops[i][1])
+    // add class for styling bordered legend keys
+    if (true) {
+        var keys = document.getElementsByClassName('legend-key');
+        for (var i=0; i < keys.length; i++) {
+            if (keys[i]) {
+                keys[i].classList.add('bordered');
             }
-            expression.push(defaultValue)
-
-            return expression
         }
+    }
+
+    // update right-margin for compact Mapbox attribution based on calculated legend width
+    updateAttribMargin(legend);
+    updateLegendMargin(legend);
+
+}
 
 
-        function generatePropertyExpression(expressionType, propertyValue, stops, defaultValue) {
-            var expression;
-            if (expressionType == 'match') {
-                expression = generateMatchExpression(propertyValue, stops, defaultValue)
-            }
-            else if (propertyValue == 'identity') {
-                expression = ['get', propertyValue]
-            }
-            else {
-                expression = generateInterpolateExpression(propertyValue, stops)
-            }
+function updateAttribMargin(legend) {
 
-            return expression
+    // default margin is based on calculated legend width
+    var attribMargin = legend.offsetWidth + 15;
+    
+    // if horizontal legend layout (multiple legends are stacked vertically)
+    if ('vertical' === 'horizontal') {
+        document.getElementsByClassName('mapboxgl-ctrl-attrib')[0].style.marginRight = (attribMargin).toString() + 'px';
+    }
+    // vertical legend layout means multiple legends are side-by-side
+    else if ('vertical' === 'vertical') {
+        var currentMargin = Number(document.getElementsByClassName('mapboxgl-ctrl-attrib')[0].style.marginRight.replace('px', ''));
+        document.getElementsByClassName('mapboxgl-ctrl-attrib')[0].style.marginRight = (attribMargin + currentMargin).toString() + 'px';
+    }
+}
+
+
+function updateLegendMargin(legend) {
+
+    var verticalLegends = document.getElementsByClassName('legend vertical'),
+        horizontalLegends = document.getElementsByClassName('legend horizontal');
+
+    if (verticalLegends.length > 1) {
+        for (i = 1; i < verticalLegends.length; i++) {
+            verticalLegends[i].style.marginRight = (legend.offsetWidth - 5).toString() + 'px';
+            var legend = verticalLegends[i];
         }
-
-    </script>
-
-    <!-- main map creation code, extended by mapboxgl/templates/circle.html -->
-    <script type="text/javascript">
-
-        mapboxgl.accessToken = 'pk.eyJ1Ijoibm9ub3VtYXN5IiwiYSI6ImNrMTBmY3MycTA1YTEzY3F3ZHZ3eHNsdTAifQ.7r-ppKeBALXFid9Vmpa9Pw';
-
-        var transformRequest = function (url, resourceType) {
-            const isMapboxRequest = url.slice(8, 22) === 'api.mapbox.com' ||
-                url.slice(10, 26) === 'tiles.mapbox.com';
-
-            return {
-                url: isMapboxRequest ? url.replace('?', '?pluginName=PythonMapboxgl&') : url
-            }
-        };
-
-        var map = new mapboxgl.Map({
-            container: 'map',
-            attributionControl: false,
-            style: 'mapbox://styles/nonoumasy/cka8p77pa1iiq1it9mqdqhumu',
-            center: [-118.2437, 34.0522],
-            zoom: 9,
-            pitch: 0,
-            bearing: 0,
-            scrollZoom: true,
-            touchZoom: true,
-            doubleClickZoom: true,
-            boxZoom: true,
-            preserveDrawingBuffer: false,
-            transformRequest: transformRequest
-        });
+    }
+    else if (horizontalLegends.length > 1) {
+        for (i = 1; i < horizontalLegends.length; i++) {
+            horizontalLegends[i].style.marginBottom = (legend.offsetHeight + 15).toString() + 'px';
+            var legend = horizontalLegends[i];
+        }
+    }
+}
 
 
+function generateInterpolateExpression(propertyValue, stops) {
+    var expression;
+    if (propertyValue == 'zoom') {
+        expression = ['interpolate', ['exponential', 1.2], ['zoom']]
+    }
+    else if (propertyValue == 'heatmap-density') {
+        expression = ['interpolate', ['linear'], ['heatmap-density']]
+    }
+    else {
+        expression = ['interpolate', ['linear'], ['get', propertyValue]]
+    }
 
+    for (var i=0; i<stops.length; i++) {
+        expression.push(stops[i][0], stops[i][1])
+    }
+    return expression
+}
+
+
+function generateMatchExpression(propertyValue, stops, defaultValue) {
+    var expression;
+    expression = ['match', ['get', propertyValue]]
+    for (var i=0; i<stops.length; i++) {
+        expression.push(stops[i][0], stops[i][1])
+    }
+    expression.push(defaultValue)
+    
+    return expression
+}
+
+
+function generatePropertyExpression(expressionType, propertyValue, stops, defaultValue) {
+    var expression;
+    if (expressionType == 'match') {
+        expression = generateMatchExpression(propertyValue, stops, defaultValue)
+    }
+    else if (propertyValue == 'identity') {
+        expression = ['get', propertyValue]
+    }
+    else {
+        expression = generateInterpolateExpression(propertyValue, stops)
+    }
+
+    return expression
+}
+
+</script>
+
+<!-- main map creation code, extended by mapboxgl/templates/circle.html -->
+<script type="text/javascript">
+
+    mapboxgl.accessToken = 'pk.eyJ1Ijoibm9ub3VtYXN5IiwiYSI6ImNrMTBmY3MycTA1YTEzY3F3ZHZ3eHNsdTAifQ.7r-ppKeBALXFid9Vmpa9Pw';
+
+    var transformRequest = function(url, resourceType) {
+        const isMapboxRequest = url.slice(8, 22) === 'api.mapbox.com' ||
+          url.slice(10, 26) === 'tiles.mapbox.com';
+      
+        return {
+          url: isMapboxRequest ? url.replace('?', '?pluginName=PythonMapboxgl&') : url
+        }
+    };
+
+    var map = new mapboxgl.Map({
+        container: 'map',
+        attributionControl: false,
+        style: 'mapbox://styles/nonoumasy/cka8p77pa1iiq1it9mqdqhumu',
+        center: [-118.2437, 34.0522],
+        zoom: 9,
+        pitch: 0,
+        bearing: 0,
+        scrollZoom: true,
+        touchZoom: true,
+        doubleClickZoom: true,
+        boxZoom: true,
+        preserveDrawingBuffer: false,
+        transformRequest: transformRequest
+    });
+
+    
+    
         map.addControl(new mapboxgl.AttributionControl({ compact: true }));
 
+    
 
-
-
+    
 
         map.addControl(new mapboxgl.NavigationControl());
 
+    
+
+    
+
+    
+        
+            calcColorLegend([[0, 'rgb(255,255,217)'], [50, 'rgb(237,248,177)'], [100, 'rgb(199,233,180)'], [250, 'rgb(127,205,187)'], [500, 'rgb(65,182,196)'], [1000, 'rgb(29,145,192)'], [1500, 'rgb(34,94,168)'], [2000, 'rgb(12,44,132)']] , "total_cases");
+        
+    
+        
 
 
+    
+        
+        
 
+    
 
+    
 
+    map.on('style.load', function() {
+        
+        
 
-        calcColorLegend([[0, 'rgb(255,255,217)'], [50, 'rgb(237,248,177)'], [100, 'rgb(199,233,180)'], [250, 'rgb(127,205,187)'], [500, 'rgb(65,182,196)'], [1000, 'rgb(29,145,192)'], [1500, 'rgb(34,94,168)'], [2000, 'rgb(12,44,132)']], "total_cases");
+        map.addSource("data", {
+            "type": "geojson",
+            "data": {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.187, 34.481]}, "properties": {"locations": "Acton", "total_cases": 20, "case_rate": 251.0, "deaths": 2, "deaths_rate": 25.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Agua Dulce", "total_cases": 11, "case_rate": 265.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.355, 34.033]}, "properties": {"locations": "Alsace", "total_cases": 136, "case_rate": 1093.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.135, 34.186]}, "properties": {"locations": "Altadena", "total_cases": 211, "case_rate": 484.0, "deaths": 7, "deaths_rate": 16.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.142, 34.567]}, "properties": {"locations": "Anaverde", "total_cases": 4, "case_rate": 265.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.722, 34.391]}, "properties": {"locations": "Angeles National Forest", "total_cases": 2, "case_rate": 5000.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.255, 34.07]}, "properties": {"locations": "Angelino Heights", "total_cases": 23, "case_rate": 919.0, "deaths": 1, "deaths_rate": 40.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.04, 34.136]}, "properties": {"locations": "Arcadia", "total_cases": 145, "case_rate": 251.0, "deaths": 8, "deaths_rate": 14.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.432, 34.241]}, "properties": {"locations": "Arleta", "total_cases": 431, "case_rate": 1254.0, "deaths": 10, "deaths_rate": 29.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.08, 33.869]}, "properties": {"locations": "Artesia", "total_cases": 93, "case_rate": 554.0, "deaths": 2, "deaths_rate": 12.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.279, 33.92]}, "properties": {"locations": "Athens Village", "total_cases": 57, "case_rate": 1164.0, "deaths": 4, "deaths_rate": 82.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.256, 34.116]}, "properties": {"locations": "Atwater Village", "total_cases": 70, "case_rate": 477.0, "deaths": 2, "deaths_rate": 14.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.327, 33.342]}, "properties": {"locations": "Avalon", "total_cases": 1, "case_rate": 26.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.965, 34.027]}, "properties": {"locations": "Avocado Heights", "total_cases": 63, "case_rate": 930.0, "deaths": 1, "deaths_rate": 15.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.906, 34.134]}, "properties": {"locations": "Azusa", "total_cases": 374, "case_rate": 747.0, "deaths": 8, "deaths_rate": 16.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.325, 34.044]}, "properties": {"locations": "Baldwin Hills", "total_cases": 251, "case_rate": 806.0, "deaths": 22, "deaths_rate": 71.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.961, 34.085]}, "properties": {"locations": "Baldwin Park", "total_cases": 744, "case_rate": 969.0, "deaths": 10, "deaths_rate": 13.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.997, 34.05]}, "properties": {"locations": "Bassett", "total_cases": 215, "case_rate": 1451.0, "deaths": 4, "deaths_rate": 27.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.46, 34.099]}, "properties": {"locations": "Bel Air", "total_cases": 43, "case_rate": 510.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.187, 33.975]}, "properties": {"locations": "Bell", "total_cases": 598, "case_rate": 1646.0, "deaths": 22, "deaths_rate": 61.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.15, 33.969]}, "properties": {"locations": "Bell Gardens", "total_cases": 604, "case_rate": 1402.0, "deaths": 11, "deaths_rate": 26.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.117, 33.883]}, "properties": {"locations": "Bellflower", "total_cases": 751, "case_rate": 966.0, "deaths": 28, "deaths_rate": 36.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.416, 34.101]}, "properties": {"locations": "Beverly Crest", "total_cases": 52, "case_rate": 415.0, "deaths": 2, "deaths_rate": 16.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.396, 34.07]}, "properties": {"locations": "Beverly Hills", "total_cases": 206, "case_rate": 597.0, "deaths": 6, "deaths_rate": 17.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.395, 34.047]}, "properties": {"locations": "Beverlywood", "total_cases": 54, "case_rate": 410.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.386, 34.577]}, "properties": {"locations": "Bouquet Canyon", "total_cases": 1, "case_rate": 93.0, "deaths": 1, "deaths_rate": 93.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.205, 34.033]}, "properties": {"locations": "Boyle Heights", "total_cases": 1533, "case_rate": 1764.0, "deaths": 23, "deaths_rate": 26.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.971, 34.147]}, "properties": {"locations": "Bradbury", "total_cases": 6, "case_rate": 561.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.474, 34.052]}, "properties": {"locations": "Brentwood", "total_cases": 106, "case_rate": 342.0, "deaths": 2, "deaths_rate": 6.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.243, 34.054]}, "properties": {"locations": "Brookside", "total_cases": 1, "case_rate": 172.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.326, 34.182]}, "properties": {"locations": "Burbank", "total_cases": 529, "case_rate": 494.0, "deaths": 47, "deaths_rate": 44.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.644, 34.145]}, "properties": {"locations": "Calabasas", "total_cases": 112, "case_rate": 460.0, "deaths": 10, "deaths_rate": 41.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.598, 34.201]}, "properties": {"locations": "Canoga Park", "total_cases": 733, "case_rate": 1123.0, "deaths": 37, "deaths_rate": 57.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.472, 34.423]}, "properties": {"locations": "Canyon Country", "total_cases": 40, "case_rate": 518.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.252, 33.832]}, "properties": {"locations": "Carson", "total_cases": 610, "case_rate": 650.0, "deaths": 27, "deaths_rate": 29.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.373, 34.056]}, "properties": {"locations": "Carthay", "total_cases": 107, "case_rate": 745.0, "deaths": 8, "deaths_rate": 56.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.623, 34.489]}, "properties": {"locations": "Castaic", "total_cases": 1772, "case_rate": 6517.0, "deaths": 2, "deaths_rate": 7.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.983, 33.929]}, "properties": {"locations": "Central", "total_cases": 880, "case_rate": 2257.0, "deaths": 19, "deaths_rate": 49.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.415, 34.057]}, "properties": {"locations": "Century City", "total_cases": 49, "case_rate": 383.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.054, 33.864]}, "properties": {"locations": "Cerritos", "total_cases": 199, "case_rate": 397.0, "deaths": 5, "deaths_rate": 10.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.602, 34.26]}, "properties": {"locations": "Chatsworth", "total_cases": 266, "case_rate": 718.0, "deaths": 32, "deaths_rate": 86.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.41, 34.041]}, "properties": {"locations": "Cheviot Hills", "total_cases": 30, "case_rate": 327.0, "deaths": 1, "deaths_rate": 11.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.236, 34.064]}, "properties": {"locations": "Chinatown", "total_cases": 33, "case_rate": 411.0, "deaths": 1, "deaths_rate": 12.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.72, 34.097]}, "properties": {"locations": "Claremont", "total_cases": 91, "case_rate": 249.0, "deaths": 2, "deaths_rate": 5.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.157, 34.003]}, "properties": {"locations": "Commerce", "total_cases": 174, "case_rate": 1331.0, "deaths": 1, "deaths_rate": 8.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.227, 33.895]}, "properties": {"locations": "Compton", "total_cases": 1250, "case_rate": 1251.0, "deaths": 25, "deaths_rate": 25.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.321, 34.05]}, "properties": {"locations": "Country Club Park", "total_cases": 140, "case_rate": 924.0, "deaths": 20, "deaths_rate": 132.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.889, 34.088]}, "properties": {"locations": "Covina", "total_cases": 343, "case_rate": 700.0, "deaths": 8, "deaths_rate": 16.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.837, 34.099]}, "properties": {"locations": "Covina (Charter Oak)", "total_cases": 83, "case_rate": 631.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.319, 34.061]}, "properties": {"locations": "Crenshaw District", "total_cases": 110, "case_rate": 795.0, "deaths": 2, "deaths_rate": 14.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.101, 34.694]}, "properties": {"locations": "Crestview", "total_cases": 110, "case_rate": 968.0, "deaths": 17, "deaths_rate": 150.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.184, 33.962]}, "properties": {"locations": "Cudahy", "total_cases": 417, "case_rate": 1713.0, "deaths": 10, "deaths_rate": 41.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.396, 34.021]}, "properties": {"locations": "Culver City", "total_cases": 191, "case_rate": 479.0, "deaths": 26, "deaths_rate": 65.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.375, 33.923]}, "properties": {"locations": "Del Aire", "total_cases": 23, "case_rate": 524.0, "deaths": 1, "deaths_rate": 23.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.424, 33.99]}, "properties": {"locations": "Del Rey", "total_cases": 107, "case_rate": 357.0, "deaths": 6, "deaths_rate": 20.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.289, 34.69]}, "properties": {"locations": "Del Sur", "total_cases": 3, "case_rate": 124.0, "deaths": 1, "deaths_rate": 41.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.153, 34.59]}, "properties": {"locations": "Desert View Highlands", "total_cases": 7, "case_rate": 281.0, "deaths": 1, "deaths_rate": 40.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.81, 34.029]}, "properties": {"locations": "Diamond Bar", "total_cases": 121, "case_rate": 210.0, "deaths": 3, "deaths_rate": 5.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.124, 33.942]}, "properties": {"locations": "Downey", "total_cases": 1356, "case_rate": 1187.0, "deaths": 45, "deaths_rate": 39.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.248, 34.043]}, "properties": {"locations": "Downtown", "total_cases": 252, "case_rate": 916.0, "deaths": 6, "deaths_rate": 22.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.977, 34.139]}, "properties": {"locations": "Duarte", "total_cases": 175, "case_rate": 795.0, "deaths": 18, "deaths_rate": 82.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.214, 34.139]}, "properties": {"locations": "Eagle Rock", "total_cases": 290, "case_rate": 733.0, "deaths": 16, "deaths_rate": 40.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.855, 34.102]}, "properties": {"locations": "East Covina", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.297, 34.09]}, "properties": {"locations": "East Hollywood", "total_cases": 303, "case_rate": 1035.0, "deaths": 40, "deaths_rate": 137.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.989, 33.924]}, "properties": {"locations": "East La Mirada", "total_cases": 29, "case_rate": 548.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.137, 34.698]}, "properties": {"locations": "East Lancaster", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.172, 34.024]}, "properties": {"locations": "East Los Angeles", "total_cases": 2193, "case_rate": 1751.0, "deaths": 53, "deaths_rate": 42.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.118, 34.145]}, "properties": {"locations": "East Pasadena", "total_cases": 4, "case_rate": 62.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.211, 33.86]}, "properties": {"locations": "East Rancho Dominguez", "total_cases": 155, "case_rate": 1013.0, "deaths": 3, "deaths_rate": 20.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.989, 33.924]}, "properties": {"locations": "East Whittier", "total_cases": 22, "case_rate": 415.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.257, 34.078]}, "properties": {"locations": "Echo Park", "total_cases": 78, "case_rate": 547.0, "deaths": 1, "deaths_rate": 7.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.78, 34.076]}, "properties": {"locations": "El Camino Village", "total_cases": 70, "case_rate": 796.0, "deaths": 2, "deaths_rate": 23.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.037, 34.075]}, "properties": {"locations": "El Monte", "total_cases": 1327, "case_rate": 1132.0, "deaths": 43, "deaths_rate": 37.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.416, 33.917]}, "properties": {"locations": "El Segundo", "total_cases": 47, "case_rate": 280.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.178, 34.081]}, "properties": {"locations": "El Sereno", "total_cases": 385, "case_rate": 921.0, "deaths": 19, "deaths_rate": 45.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Elizabeth Lake", "total_cases": 4, "case_rate": 241.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.239, 34.077]}, "properties": {"locations": "Elysian Park", "total_cases": 23, "case_rate": 403.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.242, 34.096]}, "properties": {"locations": "Elysian Valley", "total_cases": 104, "case_rate": 1023.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.502, 34.159]}, "properties": {"locations": "Encino", "total_cases": 177, "case_rate": 392.0, "deaths": 15, "deaths_rate": 33.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.286, 34.016]}, "properties": {"locations": "Exposition", "total_cases": 19, "case_rate": 571.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.287, 34.014]}, "properties": {"locations": "Exposition Park", "total_cases": 432, "case_rate": 962.0, "deaths": 12, "deaths_rate": 27.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Faircrest Heights", "total_cases": 10, "case_rate": 278.0, "deaths": 1, "deaths_rate": 28.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Figueroa Park Square", "total_cases": 91, "case_rate": 1043.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.305, 33.896]}, "properties": {"locations": "Gardena", "total_cases": 459, "case_rate": 749.0, "deaths": 29, "deaths_rate": 47.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.229, 34.116]}, "properties": {"locations": "Glassell Park", "total_cases": 278, "case_rate": 880.0, "deaths": 8, "deaths_rate": 25.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.248, 34.147]}, "properties": {"locations": "Glendale", "total_cases": 1330, "case_rate": 644.0, "deaths": 103, "deaths_rate": 50.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.865, 34.136]}, "properties": {"locations": "Glendora", "total_cases": 270, "case_rate": 512.0, "deaths": 9, "deaths_rate": 17.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.314, 33.868]}, "properties": {"locations": "Gramercy Place", "total_cases": 100, "case_rate": 929.0, "deaths": 2, "deaths_rate": 19.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.517, 34.266]}, "properties": {"locations": "Granada Hills", "total_cases": 501, "case_rate": 861.0, "deaths": 51, "deaths_rate": 88.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.263, 33.941]}, "properties": {"locations": "Green Meadows", "total_cases": 317, "case_rate": 1474.0, "deaths": 4, "deaths_rate": 19.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.969, 33.993]}, "properties": {"locations": "Hacienda Heights", "total_cases": 289, "case_rate": 517.0, "deaths": 3, "deaths_rate": 5.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.335, 34.074]}, "properties": {"locations": "Hancock Park", "total_cases": 110, "case_rate": 646.0, "deaths": 2, "deaths_rate": 12.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.3, 33.797]}, "properties": {"locations": "Harbor City", "total_cases": 175, "case_rate": 602.0, "deaths": 7, "deaths_rate": 24.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.299, 33.854]}, "properties": {"locations": "Harbor Gateway", "total_cases": 267, "case_rate": 612.0, "deaths": 7, "deaths_rate": 16.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.307, 33.783]}, "properties": {"locations": "Harbor Pines", "total_cases": 9, "case_rate": 374.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.716, 34.096]}, "properties": {"locations": "Harvard Heights", "total_cases": 204, "case_rate": 1131.0, "deaths": 15, "deaths_rate": 83.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.304, 33.984]}, "properties": {"locations": "Harvard Park", "total_cases": 538, "case_rate": 1418.0, "deaths": 8, "deaths_rate": 21.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.074, 33.828]}, "properties": {"locations": "Hawaiian Gardens", "total_cases": 161, "case_rate": 1097.0, "deaths": 1, "deaths_rate": 7.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.348, 33.919]}, "properties": {"locations": "Hawthorne", "total_cases": 650, "case_rate": 732.0, "deaths": 22, "deaths_rate": 25.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.396, 33.864]}, "properties": {"locations": "Hermosa Beach", "total_cases": 63, "case_rate": 320.0, "deaths": 2, "deaths_rate": 10.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.777, 34.735]}, "properties": {"locations": "Hi Vista", "total_cases": 1, "case_rate": 91.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.658, 34.164]}, "properties": {"locations": "Hidden Hills", "total_cases": 4, "case_rate": 212.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.197, 34.11]}, "properties": {"locations": "Highland Park", "total_cases": 410, "case_rate": 847.0, "deaths": 5, "deaths_rate": 10.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.268, 34.07]}, "properties": {"locations": "Historic Filipinotown", "total_cases": 204, "case_rate": 1471.0, "deaths": 8, "deaths_rate": 58.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.33, 34.098]}, "properties": {"locations": "Hollywood", "total_cases": 412, "case_rate": 604.0, "deaths": 6, "deaths_rate": 9.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.336, 34.131]}, "properties": {"locations": "Hollywood Hills", "total_cases": 105, "case_rate": 357.0, "deaths": 5, "deaths_rate": 17.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.212, 33.983]}, "properties": {"locations": "Huntington Park", "total_cases": 1032, "case_rate": 1735.0, "deaths": 17, "deaths_rate": 29.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.331, 33.981]}, "properties": {"locations": "Hyde Park", "total_cases": 239, "case_rate": 837.0, "deaths": 5, "deaths_rate": 18.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.886, 33.997]}, "properties": {"locations": "Industry", "total_cases": 13, "case_rate": 2975.0, "deaths": 2, "deaths_rate": 458.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.353, 33.956]}, "properties": {"locations": "Inglewood", "total_cases": 916, "case_rate": 806.0, "deaths": 61, "deaths_rate": 54.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.934, 34.107]}, "properties": {"locations": "Irwindale", "total_cases": 11, "case_rate": 754.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.318, 34.027]}, "properties": {"locations": "Jefferson Park", "total_cases": 83, "case_rate": 1028.0, "deaths": 1, "deaths_rate": 12.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.305, 34.062]}, "properties": {"locations": "Koreatown", "total_cases": 447, "case_rate": 865.0, "deaths": 18, "deaths_rate": 35.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.201, 34.2]}, "properties": {"locations": "La Canada Flintridge", "total_cases": 72, "case_rate": 348.0, "deaths": 6, "deaths_rate": 29.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.95, 33.96]}, "properties": {"locations": "La Habra Heights", "total_cases": 13, "case_rate": 238.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.011, 33.906]}, "properties": {"locations": "La Mirada", "total_cases": 284, "case_rate": 573.0, "deaths": 19, "deaths_rate": 38.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.95, 34.02]}, "properties": {"locations": "La Puente", "total_cases": 360, "case_rate": 885.0, "deaths": 3, "deaths_rate": 7.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.284, 34.189]}, "properties": {"locations": "La Rambla", "total_cases": 55, "case_rate": 2651.0, "deaths": 4, "deaths_rate": 193.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.768, 34.101]}, "properties": {"locations": "La Verne", "total_cases": 93, "case_rate": 279.0, "deaths": 2, "deaths_rate": 6.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.375, 33.994]}, "properties": {"locations": "Ladera Heights", "total_cases": 27, "case_rate": 382.0, "deaths": 1, "deaths_rate": 14.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Lafayette Square", "total_cases": 30, "case_rate": 658.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.495, 34.181]}, "properties": {"locations": "Lake Balboa", "total_cases": 301, "case_rate": 713.0, "deaths": 8, "deaths_rate": 19.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.449, 34.677]}, "properties": {"locations": "Lake Hughes", "total_cases": 1, "case_rate": 150.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.84, 34.613]}, "properties": {"locations": "Lake Los Angeles", "total_cases": 48, "case_rate": 369.0, "deaths": 2, "deaths_rate": 15.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Lake Manor", "total_cases": 5, "case_rate": 304.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.899, 34.14]}, "properties": {"locations": "Lakeview Terrace", "total_cases": 216, "case_rate": 1645.0, "deaths": 5, "deaths_rate": 38.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.117, 33.85]}, "properties": {"locations": "Lakewood", "total_cases": 377, "case_rate": 469.0, "deaths": 8, "deaths_rate": 10.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.137, 34.698]}, "properties": {"locations": "Lancaster", "total_cases": 961, "case_rate": 595.0, "deaths": 15, "deaths_rate": 9.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.353, 33.889]}, "properties": {"locations": "Lawndale", "total_cases": 185, "case_rate": 550.0, "deaths": 7, "deaths_rate": 21.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.332, 34.008]}, "properties": {"locations": "Leimert Park", "total_cases": 89, "case_rate": 584.0, "deaths": 2, "deaths_rate": 13.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.352, 33.939]}, "properties": {"locations": "Lennox", "total_cases": 177, "case_rate": 785.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.288, 34.618]}, "properties": {"locations": "Leona Valley", "total_cases": 4, "case_rate": 228.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.205, 34.071]}, "properties": {"locations": "Lincoln Heights", "total_cases": 443, "case_rate": 1359.0, "deaths": 28, "deaths_rate": 86.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.304, 34.098]}, "properties": {"locations": "Little Armenia", "total_cases": 238, "case_rate": 2966.0, "deaths": 40, "deaths_rate": 498.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.297, 34.069]}, "properties": {"locations": "Little Bangladesh", "total_cases": 221, "case_rate": 780.0, "deaths": 4, "deaths_rate": 14.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.241, 34.048]}, "properties": {"locations": "Little Tokyo", "total_cases": 34, "case_rate": 1085.0, "deaths": 2, "deaths_rate": 64.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.987, 34.521]}, "properties": {"locations": "Littlerock", "total_cases": 22, "case_rate": 547.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.818, 34.506]}, "properties": {"locations": "Llano", "total_cases": 1, "case_rate": 114.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.32, 33.804]}, "properties": {"locations": "Lomita", "total_cases": 73, "case_rate": 352.0, "deaths": 6, "deaths_rate": 29.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.426, 33.974]}, "properties": {"locations": "Longwood", "total_cases": 42, "case_rate": 976.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.289, 34.11]}, "properties": {"locations": "Los Feliz", "total_cases": 75, "case_rate": 347.0, "deaths": 1, "deaths_rate": 5.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.202, 33.925]}, "properties": {"locations": "Lynwood", "total_cases": 1178, "case_rate": 1635.0, "deaths": 55, "deaths_rate": 76.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.689, 34.036]}, "properties": {"locations": "Malibu", "total_cases": 48, "case_rate": 370.0, "deaths": 1, "deaths_rate": 8.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.313, 33.966]}, "properties": {"locations": "Manchester Square", "total_cases": 44, "case_rate": 515.0, "deaths": 1, "deaths_rate": 12.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.495, 34.061]}, "properties": {"locations": "Mandeville Canyon", "total_cases": 3, "case_rate": 96.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.395, 33.892]}, "properties": {"locations": "Manhattan Beach", "total_cases": 110, "case_rate": 306.0, "deaths": 3, "deaths_rate": 8.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.439, 34.004]}, "properties": {"locations": "Mar Vista", "total_cases": 113, "case_rate": 266.0, "deaths": 5, "deaths_rate": 12.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.123, 33.749]}, "properties": {"locations": "Marina Peninsula", "total_cases": 19, "case_rate": 436.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.449, 33.978]}, "properties": {"locations": "Marina del Rey", "total_cases": 20, "case_rate": 213.0, "deaths": 1, "deaths_rate": 11.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.185, 33.987]}, "properties": {"locations": "Maywood", "total_cases": 568, "case_rate": 2025.0, "deaths": 17, "deaths_rate": 61.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.308, 34.086]}, "properties": {"locations": "Melrose", "total_cases": 803, "case_rate": 1034.0, "deaths": 44, "deaths_rate": 57.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.349, 34.059]}, "properties": {"locations": "Miracle Mile", "total_cases": 59, "case_rate": 328.0, "deaths": 5, "deaths_rate": 28.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.467, 34.257]}, "properties": {"locations": "Mission Hills", "total_cases": 244, "case_rate": 1011.0, "deaths": 12, "deaths_rate": 50.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.001, 34.148]}, "properties": {"locations": "Monrovia", "total_cases": 256, "case_rate": 660.0, "deaths": 28, "deaths_rate": 72.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.112, 34.016]}, "properties": {"locations": "Montebello", "total_cases": 779, "case_rate": 1210.0, "deaths": 26, "deaths_rate": 40.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.13, 34.052]}, "properties": {"locations": "Monterey Park", "total_cases": 285, "case_rate": 458.0, "deaths": 11, "deaths_rate": 18.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.221, 34.099]}, "properties": {"locations": "Mt. Washington", "total_cases": 157, "case_rate": 650.0, "deaths": 4, "deaths_rate": 17.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.529, 34.38]}, "properties": {"locations": "Newhall", "total_cases": 3, "case_rate": 1364.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.485, 34.243]}, "properties": {"locations": "North Hills", "total_cases": 707, "case_rate": 1148.0, "deaths": 28, "deaths_rate": 45.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.374, 34.173]}, "properties": {"locations": "North Hollywood", "total_cases": 1102, "case_rate": 728.0, "deaths": 30, "deaths_rate": 20.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.137, 34.698]}, "properties": {"locations": "North Lancaster", "total_cases": 7, "case_rate": 584.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.067, 34.0]}, "properties": {"locations": "North Whittier", "total_cases": 47, "case_rate": 562.0, "deaths": 2, "deaths_rate": 24.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.109, 34.099]}, "properties": {"locations": "Northeast San Gabriel", "total_cases": 92, "case_rate": 383.0, "deaths": 5, "deaths_rate": 21.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.537, 34.235]}, "properties": {"locations": "Northridge", "total_cases": 533, "case_rate": 764.0, "deaths": 34, "deaths_rate": 49.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.085, 33.909]}, "properties": {"locations": "Norwalk", "total_cases": 957, "case_rate": 889.0, "deaths": 26, "deaths_rate": 24.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.526, 34.048]}, "properties": {"locations": "Pacific Palisades", "total_cases": 63, "case_rate": 296.0, "deaths": 3, "deaths_rate": 14.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.427, 34.263]}, "properties": {"locations": "Pacoima", "total_cases": 1191, "case_rate": 1547.0, "deaths": 21, "deaths_rate": 27.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Palisades Highlands", "total_cases": 9, "case_rate": 234.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.117, 34.579]}, "properties": {"locations": "Palmdale", "total_cases": 1150, "case_rate": 723.0, "deaths": 20, "deaths_rate": 13.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.412, 34.025]}, "properties": {"locations": "Palms", "total_cases": 262, "case_rate": 597.0, "deaths": 24, "deaths_rate": 55.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.402, 33.787]}, "properties": {"locations": "Palos Verdes Estates", "total_cases": 49, "case_rate": 362.0, "deaths": 1, "deaths_rate": 7.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.371, 33.771]}, "properties": {"locations": "Palos Verdes Peninsula", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.445, 34.224]}, "properties": {"locations": "Panorama City", "total_cases": 1182, "case_rate": 1571.0, "deaths": 55, "deaths_rate": 73.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.171, 33.899]}, "properties": {"locations": "Paramount", "total_cases": 729, "case_rate": 1301.0, "deaths": 12, "deaths_rate": 21.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.355, 34.067]}, "properties": {"locations": "Park La Brea", "total_cases": 31, "case_rate": 228.0, "deaths": 1, "deaths_rate": 7.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Pellissier Village", "total_cases": 3, "case_rate": 485.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.097, 33.983]}, "properties": {"locations": "Pico Rivera", "total_cases": 839, "case_rate": 1305.0, "deaths": 36, "deaths_rate": 56.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.414, 34.381]}, "properties": {"locations": "Placerita Canyon", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.437, 33.955]}, "properties": {"locations": "Playa Del Rey", "total_cases": 5, "case_rate": 156.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.418, 33.976]}, "properties": {"locations": "Playa Vista", "total_cases": 43, "case_rate": 393.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.752, 34.055]}, "properties": {"locations": "Pomona", "total_cases": 1232, "case_rate": 790.0, "deaths": 18, "deaths_rate": 12.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.561, 34.282]}, "properties": {"locations": "Porter Ranch", "total_cases": 135, "case_rate": 379.0, "deaths": 6, "deaths_rate": 17.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.218, 34.645]}, "properties": {"locations": "Quartz Hill", "total_cases": 55, "case_rate": 426.0, "deaths": 9, "deaths_rate": 70.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.211, 33.86]}, "properties": {"locations": "Rancho Dominguez", "total_cases": 27, "case_rate": 1015.0, "deaths": 1, "deaths_rate": 38.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.371, 33.748]}, "properties": {"locations": "Rancho Palos Verdes", "total_cases": 124, "case_rate": 290.0, "deaths": 12, "deaths_rate": 28.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.425, 34.034]}, "properties": {"locations": "Rancho Park", "total_cases": 25, "case_rate": 381.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.389, 33.846]}, "properties": {"locations": "Redondo Beach", "total_cases": 183, "case_rate": 266.0, "deaths": 8, "deaths_rate": 12.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.447, 34.062]}, "properties": {"locations": "Regent Square", "total_cases": 13, "case_rate": 468.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.537, 34.2]}, "properties": {"locations": "Reseda", "total_cases": 884, "case_rate": 1154.0, "deaths": 46, "deaths_rate": 60.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.534, 34.285]}, "properties": {"locations": "Reseda Ranch", "total_cases": 36, "case_rate": 777.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Reynier Village", "total_cases": 21, "case_rate": 497.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.35, 33.767]}, "properties": {"locations": "Rolling Hills", "total_cases": 2, "case_rate": 103.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.358, 33.788]}, "properties": {"locations": "Rolling Hills Estates", "total_cases": 21, "case_rate": 259.0, "deaths": 2, "deaths_rate": 25.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.304, 33.865]}, "properties": {"locations": "Roosevelt", "total_cases": 1, "case_rate": 107.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.088, 34.068]}, "properties": {"locations": "Rosemead", "total_cases": 212, "case_rate": 383.0, "deaths": 8, "deaths_rate": 14.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.361, 34.08]}, "properties": {"locations": "Rosewood", "total_cases": 8, "case_rate": 622.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.905, 33.976]}, "properties": {"locations": "Rowland Heights", "total_cases": 237, "case_rate": 465.0, "deaths": 5, "deaths_rate": 10.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.807, 34.107]}, "properties": {"locations": "San Dimas", "total_cases": 128, "case_rate": 371.0, "deaths": 2, "deaths_rate": 6.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.438, 34.285]}, "properties": {"locations": "San Fernando", "total_cases": 273, "case_rate": 1109.0, "deaths": 11, "deaths_rate": 45.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.109, 34.099]}, "properties": {"locations": "San Gabriel", "total_cases": 214, "case_rate": 523.0, "deaths": 21, "deaths_rate": 51.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.02, 33.946]}, "properties": {"locations": "San Jose Hills", "total_cases": 168, "case_rate": 831.0, "deaths": 4, "deaths_rate": 20.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.106, 34.122]}, "properties": {"locations": "San Marino", "total_cases": 26, "case_rate": 196.0, "deaths": 1, "deaths_rate": 8.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.102, 34.139]}, "properties": {"locations": "San Pasqual", "total_cases": 3, "case_rate": 147.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.292, 33.736]}, "properties": {"locations": "San Pedro", "total_cases": 1120, "case_rate": 1435.0, "deaths": 21, "deaths_rate": 27.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.414, 34.409]}, "properties": {"locations": "Sand Canyon", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.424, 33.389]}, "properties": {"locations": "Santa Catalina Island", "total_cases": 3, "case_rate": 1124.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.543, 34.392]}, "properties": {"locations": "Santa Clarita", "total_cases": 1031, "case_rate": 468.0, "deaths": 24, "deaths_rate": 11.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.069, 33.948]}, "properties": {"locations": "Santa Fe Springs", "total_cases": 124, "case_rate": 675.0, "deaths": 1, "deaths_rate": 5.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.497, 34.025]}, "properties": {"locations": "Santa Monica", "total_cases": 382, "case_rate": 413.0, "deaths": 29, "deaths_rate": 31.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Santa Monica Mountains", "total_cases": 38, "case_rate": 204.0, "deaths": 1, "deaths_rate": 5.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.517, 34.449]}, "properties": {"locations": "Saugus", "total_cases": 5, "case_rate": 3226.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.352, 34.262]}, "properties": {"locations": "Shadow Hills", "total_cases": 16, "case_rate": 360.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.449, 34.151]}, "properties": {"locations": "Sherman Oaks", "total_cases": 335, "case_rate": 384.0, "deaths": 14, "deaths_rate": 16.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.053, 34.162]}, "properties": {"locations": "Sierra Madre", "total_cases": 28, "case_rate": 255.0, "deaths": 2, "deaths_rate": 18.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.168, 33.805]}, "properties": {"locations": "Signal Hill", "total_cases": 78, "case_rate": 661.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.275, 34.085]}, "properties": {"locations": "Silverlake", "total_cases": 262, "case_rate": 594.0, "deaths": 14, "deaths_rate": 32.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "South Antelope Valley", "total_cases": 1, "case_rate": 220.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.373, 34.056]}, "properties": {"locations": "South Carthay", "total_cases": 45, "case_rate": 425.0, "deaths": 1, "deaths_rate": 9.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.047, 34.052]}, "properties": {"locations": "South El Monte", "total_cases": 250, "case_rate": 1197.0, "deaths": 5, "deaths_rate": 24.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.201, 33.946]}, "properties": {"locations": "South Gate", "total_cases": 1476, "case_rate": 1504.0, "deaths": 33, "deaths_rate": 34.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.267, 34.04]}, "properties": {"locations": "South Park", "total_cases": 773, "case_rate": 2036.0, "deaths": 14, "deaths_rate": 37.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.148, 34.113]}, "properties": {"locations": "South Pasadena", "total_cases": 151, "case_rate": 580.0, "deaths": 21, "deaths_rate": 81.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.09, 34.063]}, "properties": {"locations": "South San Gabriel", "total_cases": 76, "case_rate": 859.0, "deaths": 5, "deaths_rate": 57.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.035, 33.944]}, "properties": {"locations": "South Whittier", "total_cases": 378, "case_rate": 638.0, "deaths": 7, "deaths_rate": 12.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Southeast Antelope Valley", "total_cases": 2, "case_rate": 256.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "St Elmo Village", "total_cases": 57, "case_rate": 1243.0, "deaths": 6, "deaths_rate": 131.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.583, 34.386]}, "properties": {"locations": "Stevenson Ranch", "total_cases": 52, "case_rate": 248.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.396, 34.148]}, "properties": {"locations": "Studio City", "total_cases": 98, "case_rate": 437.0, "deaths": 8, "deaths_rate": 36.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.37, 34.218]}, "properties": {"locations": "Sun Valley", "total_cases": 471, "case_rate": 897.0, "deaths": 10, "deaths_rate": 19.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.38, 34.225]}, "properties": {"locations": "Sun Village", "total_cases": 40, "case_rate": 663.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.302, 34.267]}, "properties": {"locations": "Sunland", "total_cases": 206, "case_rate": 1009.0, "deaths": 20, "deaths_rate": 98.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.132, 34.673]}, "properties": {"locations": "Sunrise Village", "total_cases": 11, "case_rate": 849.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.466, 34.329]}, "properties": {"locations": "Sycamore Square", "total_cases": 1, "case_rate": 155.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.449, 34.308]}, "properties": {"locations": "Sylmar", "total_cases": 1183, "case_rate": 1436.0, "deaths": 53, "deaths_rate": 64.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.543, 34.171]}, "properties": {"locations": "Tarzana", "total_cases": 323, "case_rate": 1046.0, "deaths": 26, "deaths_rate": 84.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.058, 34.108]}, "properties": {"locations": "Temple City", "total_cases": 223, "case_rate": 612.0, "deaths": 29, "deaths_rate": 80.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.305, 34.102]}, "properties": {"locations": "Thai Town", "total_cases": 52, "case_rate": 530.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.349, 34.147]}, "properties": {"locations": "Toluca Lake", "total_cases": 26, "case_rate": 299.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.35, 34.149]}, "properties": {"locations": "Toluca Terrace", "total_cases": 8, "case_rate": 613.0, "deaths": 1, "deaths_rate": 77.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Toluca Woods", "total_cases": 3, "case_rate": 161.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.341, 33.836]}, "properties": {"locations": "Torrance", "total_cases": 528, "case_rate": 354.0, "deaths": 50, "deaths_rate": 33.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.288, 34.252]}, "properties": {"locations": "Tujunga", "total_cases": 171, "case_rate": 615.0, "deaths": 11, "deaths_rate": 40.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.177, 34.067]}, "properties": {"locations": "University Hills", "total_cases": 18, "case_rate": 525.0, "deaths": 1, "deaths_rate": 29.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.886, 34.128]}, "properties": {"locations": "University Park", "total_cases": 321, "case_rate": 1169.0, "deaths": 6, "deaths_rate": 22.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.654, 34.445]}, "properties": {"locations": "Val Verde", "total_cases": 25, "case_rate": 756.0, "deaths": 1, "deaths_rate": 30.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.561, 34.414]}, "properties": {"locations": "Valencia", "total_cases": 12, "case_rate": 391.0, "deaths": 1, "deaths_rate": 33.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.934, 34.038]}, "properties": {"locations": "Valinda", "total_cases": 215, "case_rate": 920.0, "deaths": 1, "deaths_rate": 4.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.414, 34.183]}, "properties": {"locations": "Valley Glen", "total_cases": 203, "case_rate": 676.0, "deaths": 9, "deaths_rate": 30.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.397, 34.164]}, "properties": {"locations": "Valley Village", "total_cases": 286, "case_rate": 1157.0, "deaths": 21, "deaths_rate": 85.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.449, 34.187]}, "properties": {"locations": "Van Nuys", "total_cases": 1139, "case_rate": 1222.0, "deaths": 40, "deaths_rate": 43.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.467, 33.995]}, "properties": {"locations": "Venice", "total_cases": 86, "case_rate": 254.0, "deaths": 2, "deaths_rate": 6.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.292, 33.967]}, "properties": {"locations": "Vermont Knolls", "total_cases": 307, "case_rate": 1785.0, "deaths": 5, "deaths_rate": 29.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.296, 34.0]}, "properties": {"locations": "Vermont Square", "total_cases": 143, "case_rate": 1868.0, "deaths": 2, "deaths_rate": 26.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.286, 33.942]}, "properties": {"locations": "Vermont Vista", "total_cases": 698, "case_rate": 1695.0, "deaths": 11, "deaths_rate": 27.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.23, 34.004]}, "properties": {"locations": "Vernon", "total_cases": 9, "case_rate": 4306.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.225, 34.007]}, "properties": {"locations": "Vernon Central", "total_cases": 1181, "case_rate": 2271.0, "deaths": 17, "deaths_rate": 33.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.331, 34.047]}, "properties": {"locations": "Victoria Park", "total_cases": 81, "case_rate": 964.0, "deaths": 2, "deaths_rate": 24.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.348, 33.984]}, "properties": {"locations": "View Heights", "total_cases": 14, "case_rate": 379.0, "deaths": 2, "deaths_rate": 54.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.865, 34.02]}, "properties": {"locations": "Walnut", "total_cases": 85, "case_rate": 278.0, "deaths": 1, "deaths_rate": 3.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.22, 33.969]}, "properties": {"locations": "Walnut Park", "total_cases": 249, "case_rate": 1542.0, "deaths": 4, "deaths_rate": 25.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.243, 33.941]}, "properties": {"locations": "Watts", "total_cases": 628, "case_rate": 1472.0, "deaths": 12, "deaths_rate": 28.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Wellington Square", "total_cases": 40, "case_rate": 814.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.352, 34.029]}, "properties": {"locations": "West Adams", "total_cases": 372, "case_rate": 1346.0, "deaths": 25, "deaths_rate": 90.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "West Antelope Valley", "total_cases": 3, "case_rate": 199.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.293, 33.822]}, "properties": {"locations": "West Carson", "total_cases": 150, "case_rate": 679.0, "deaths": 11, "deaths_rate": 50.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.939, 34.069]}, "properties": {"locations": "West Covina", "total_cases": 780, "case_rate": 721.0, "deaths": 14, "deaths_rate": 13.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.645, 34.203]}, "properties": {"locations": "West Hills", "total_cases": 208, "case_rate": 513.0, "deaths": 22, "deaths_rate": 54.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.369, 34.092]}, "properties": {"locations": "West Hollywood", "total_cases": 234, "case_rate": 633.0, "deaths": 4, "deaths_rate": 11.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.321, 34.086]}, "properties": {"locations": "West LA", "total_cases": 24, "case_rate": 2521.0, "deaths": 2, "deaths_rate": 210.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.448, 34.046]}, "properties": {"locations": "West Los Angeles", "total_cases": 166, "case_rate": 441.0, "deaths": 7, "deaths_rate": 19.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-117.965, 34.05]}, "properties": {"locations": "West Puente Valley", "total_cases": 103, "case_rate": 1047.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.211, 33.86]}, "properties": {"locations": "West Rancho Dominguez", "total_cases": 10, "case_rate": 736.0, "deaths": 1, "deaths_rate": 74.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.28, 34.005]}, "properties": {"locations": "West Vernon", "total_cases": 846, "case_rate": 1577.0, "deaths": 22, "deaths_rate": 41.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.4, 33.954]}, "properties": {"locations": "Westchester", "total_cases": 148, "case_rate": 287.0, "deaths": 11, "deaths_rate": 21.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "Westhills", "total_cases": 3, "case_rate": 358.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.273, 34.063]}, "properties": {"locations": "Westlake", "total_cases": 1285, "case_rate": 2165.0, "deaths": 98, "deaths_rate": 165.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.806, 34.146]}, "properties": {"locations": "Westlake Village", "total_cases": 8, "case_rate": 96.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.44, 34.067]}, "properties": {"locations": "Westwood", "total_cases": 114, "case_rate": 211.0, "deaths": 5, "deaths_rate": 9.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0.0, 0.0]}, "properties": {"locations": "White Fence Farms", "total_cases": 17, "case_rate": 462.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.031, 33.971]}, "properties": {"locations": "Whittier", "total_cases": 579, "case_rate": 662.0, "deaths": 13, "deaths_rate": 15.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.235, 34.037]}, "properties": {"locations": "Wholesale District", "total_cases": 1087, "case_rate": 3009.0, "deaths": 9, "deaths_rate": 25.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.234, 33.919]}, "properties": {"locations": "Willowbrook", "total_cases": 493, "case_rate": 1412.0, "deaths": 10, "deaths_rate": 29.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.263, 33.78]}, "properties": {"locations": "Wilmington", "total_cases": 509, "case_rate": 901.0, "deaths": 6, "deaths_rate": 11.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.433, 34.062]}, "properties": {"locations": "Wilshire Center", "total_cases": 417, "case_rate": 831.0, "deaths": 24, "deaths_rate": 48.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.571, 34.206]}, "properties": {"locations": "Winnetka", "total_cases": 433, "case_rate": 836.0, "deaths": 5, "deaths_rate": 10.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.375, 33.913]}, "properties": {"locations": "Wiseburn", "total_cases": 34, "case_rate": 564.0, "deaths": 0, "deaths_rate": 0.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.606, 34.168]}, "properties": {"locations": "Woodland Hills", "total_cases": 262, "case_rate": 385.0, "deaths": 15, "deaths_rate": 22.0}}, {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-118.144, 34.148]}, "properties": {"locations": "Pasadena", "total_cases": 1207, "case_rate": null, "deaths": null, "deaths_rate": null}}]},
+            "buffer": 1,
+            "maxzoom": 14,
+            "generateId": true
+        });
 
-
-
-
-
-
-
-
-
-
-
-
-
-        map.on('style.load', function () {
-
-
-
-            map.addSource("data", {
-                "type": "geojson",
-                "data": { "type": "FeatureCollection", "features": [{ "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.187, 34.481] }, "properties": { "locations": "Acton", "total_cases": 18, "case_rate": 226.0, "deaths": 2, "deaths_rate": 25.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Agua Dulce", "total_cases": 9, "case_rate": 216.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.355, 34.033] }, "properties": { "locations": "Alsace", "total_cases": 105, "case_rate": 844.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.135, 34.186] }, "properties": { "locations": "Altadena", "total_cases": 192, "case_rate": 440.0, "deaths": 6, "deaths_rate": 14.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.142, 34.567] }, "properties": { "locations": "Anaverde", "total_cases": 4, "case_rate": 265.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.722, 34.391] }, "properties": { "locations": "Angeles National Forest", "total_cases": 1, "case_rate": 2500.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.255, 34.07] }, "properties": { "locations": "Angelino Heights", "total_cases": 21, "case_rate": 839.0, "deaths": 1, "deaths_rate": 40.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.04, 34.136] }, "properties": { "locations": "Arcadia", "total_cases": 124, "case_rate": 215.0, "deaths": 6, "deaths_rate": 10.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.432, 34.241] }, "properties": { "locations": "Arleta", "total_cases": 363, "case_rate": 1056.0, "deaths": 10, "deaths_rate": 29.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.08, 33.869] }, "properties": { "locations": "Artesia", "total_cases": 72, "case_rate": 429.0, "deaths": 1, "deaths_rate": 6.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.279, 33.92] }, "properties": { "locations": "Athens Village", "total_cases": 48, "case_rate": 980.0, "deaths": 2, "deaths_rate": 41.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.256, 34.116] }, "properties": { "locations": "Atwater Village", "total_cases": 58, "case_rate": 395.0, "deaths": 2, "deaths_rate": 14.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.327, 33.342] }, "properties": { "locations": "Avalon", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.965, 34.027] }, "properties": { "locations": "Avocado Heights", "total_cases": 48, "case_rate": 708.0, "deaths": 1, "deaths_rate": 15.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.906, 34.134] }, "properties": { "locations": "Azusa", "total_cases": 292, "case_rate": 584.0, "deaths": 5, "deaths_rate": 10.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.325, 34.044] }, "properties": { "locations": "Baldwin Hills", "total_cases": 226, "case_rate": 726.0, "deaths": 21, "deaths_rate": 67.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.961, 34.085] }, "properties": { "locations": "Baldwin Park", "total_cases": 561, "case_rate": 731.0, "deaths": 8, "deaths_rate": 10.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.997, 34.05] }, "properties": { "locations": "Bassett", "total_cases": 166, "case_rate": 1120.0, "deaths": 4, "deaths_rate": 27.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.46, 34.099] }, "properties": { "locations": "Bel Air", "total_cases": 40, "case_rate": 475.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.187, 33.975] }, "properties": { "locations": "Bell", "total_cases": 515, "case_rate": 1417.0, "deaths": 22, "deaths_rate": 61.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.15, 33.969] }, "properties": { "locations": "Bell Gardens", "total_cases": 500, "case_rate": 1161.0, "deaths": 11, "deaths_rate": 26.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.117, 33.883] }, "properties": { "locations": "Bellflower", "total_cases": 601, "case_rate": 773.0, "deaths": 24, "deaths_rate": 31.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.416, 34.101] }, "properties": { "locations": "Beverly Crest", "total_cases": 46, "case_rate": 367.0, "deaths": 2, "deaths_rate": 16.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.396, 34.07] }, "properties": { "locations": "Beverly Hills", "total_cases": 190, "case_rate": 550.0, "deaths": 6, "deaths_rate": 17.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.395, 34.047] }, "properties": { "locations": "Beverlywood", "total_cases": 48, "case_rate": 364.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.386, 34.577] }, "properties": { "locations": "Bouquet Canyon", "total_cases": 1, "case_rate": 93.0, "deaths": 1, "deaths_rate": 93.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.205, 34.033] }, "properties": { "locations": "Boyle Heights", "total_cases": 1273, "case_rate": 1465.0, "deaths": 20, "deaths_rate": 23.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.971, 34.147] }, "properties": { "locations": "Bradbury", "total_cases": 4, "case_rate": 374.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.474, 34.052] }, "properties": { "locations": "Brentwood", "total_cases": 93, "case_rate": 300.0, "deaths": 2, "deaths_rate": 6.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.243, 34.054] }, "properties": { "locations": "Brookside", "total_cases": 1, "case_rate": 172.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.326, 34.182] }, "properties": { "locations": "Burbank", "total_cases": 465, "case_rate": 434.0, "deaths": 44, "deaths_rate": 41.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.644, 34.145] }, "properties": { "locations": "Calabasas", "total_cases": 99, "case_rate": 407.0, "deaths": 10, "deaths_rate": 41.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.598, 34.201] }, "properties": { "locations": "Canoga Park", "total_cases": 655, "case_rate": 1003.0, "deaths": 33, "deaths_rate": 51.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.472, 34.423] }, "properties": { "locations": "Canyon Country", "total_cases": 39, "case_rate": 505.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.252, 33.832] }, "properties": { "locations": "Carson", "total_cases": 558, "case_rate": 595.0, "deaths": 27, "deaths_rate": 29.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.373, 34.056] }, "properties": { "locations": "Carthay", "total_cases": 92, "case_rate": 641.0, "deaths": 8, "deaths_rate": 56.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.623, 34.489] }, "properties": { "locations": "Castaic", "total_cases": 1724, "case_rate": 6340.0, "deaths": 2, "deaths_rate": 7.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.983, 33.929] }, "properties": { "locations": "Central", "total_cases": 722, "case_rate": 1852.0, "deaths": 19, "deaths_rate": 49.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.415, 34.057] }, "properties": { "locations": "Century City", "total_cases": 47, "case_rate": 367.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.054, 33.864] }, "properties": { "locations": "Cerritos", "total_cases": 164, "case_rate": 328.0, "deaths": 4, "deaths_rate": 8.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.602, 34.26] }, "properties": { "locations": "Chatsworth", "total_cases": 241, "case_rate": 650.0, "deaths": 31, "deaths_rate": 84.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.41, 34.041] }, "properties": { "locations": "Cheviot Hills", "total_cases": 25, "case_rate": 273.0, "deaths": 1, "deaths_rate": 11.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.236, 34.064] }, "properties": { "locations": "Chinatown", "total_cases": 29, "case_rate": 362.0, "deaths": 1, "deaths_rate": 12.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.72, 34.097] }, "properties": { "locations": "Claremont", "total_cases": 72, "case_rate": 197.0, "deaths": 2, "deaths_rate": 5.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.157, 34.003] }, "properties": { "locations": "Commerce", "total_cases": 142, "case_rate": 1087.0, "deaths": 1, "deaths_rate": 8.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.227, 33.895] }, "properties": { "locations": "Compton", "total_cases": 1026, "case_rate": 1027.0, "deaths": 23, "deaths_rate": 23.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.321, 34.05] }, "properties": { "locations": "Country Club Park", "total_cases": 124, "case_rate": 818.0, "deaths": 20, "deaths_rate": 132.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.889, 34.088] }, "properties": { "locations": "Covina", "total_cases": 273, "case_rate": 557.0, "deaths": 7, "deaths_rate": 14.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.837, 34.099] }, "properties": { "locations": "Covina (Charter Oak)", "total_cases": 70, "case_rate": 533.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.319, 34.061] }, "properties": { "locations": "Crenshaw District", "total_cases": 98, "case_rate": 709.0, "deaths": 3, "deaths_rate": 22.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.101, 34.694] }, "properties": { "locations": "Crestview", "total_cases": 101, "case_rate": 888.0, "deaths": 16, "deaths_rate": 141.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.184, 33.962] }, "properties": { "locations": "Cudahy", "total_cases": 368, "case_rate": 1511.0, "deaths": 9, "deaths_rate": 37.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.396, 34.021] }, "properties": { "locations": "Culver City", "total_cases": 179, "case_rate": 449.0, "deaths": 26, "deaths_rate": 65.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.375, 33.923] }, "properties": { "locations": "Del Aire", "total_cases": 19, "case_rate": 433.0, "deaths": 1, "deaths_rate": 23.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.424, 33.99] }, "properties": { "locations": "Del Rey", "total_cases": 98, "case_rate": 327.0, "deaths": 6, "deaths_rate": 20.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.289, 34.69] }, "properties": { "locations": "Del Sur", "total_cases": 2, "case_rate": 83.0, "deaths": 1, "deaths_rate": 41.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.153, 34.59] }, "properties": { "locations": "Desert View Highlands", "total_cases": 6, "case_rate": 241.0, "deaths": 1, "deaths_rate": 40.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.81, 34.029] }, "properties": { "locations": "Diamond Bar", "total_cases": 94, "case_rate": 163.0, "deaths": 2, "deaths_rate": 3.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.124, 33.942] }, "properties": { "locations": "Downey", "total_cases": 1132, "case_rate": 991.0, "deaths": 40, "deaths_rate": 35.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.248, 34.043] }, "properties": { "locations": "Downtown", "total_cases": 214, "case_rate": 778.0, "deaths": 5, "deaths_rate": 18.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.977, 34.139] }, "properties": { "locations": "Duarte", "total_cases": 154, "case_rate": 699.0, "deaths": 17, "deaths_rate": 77.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.214, 34.139] }, "properties": { "locations": "Eagle Rock", "total_cases": 240, "case_rate": 606.0, "deaths": 16, "deaths_rate": 40.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.855, 34.102] }, "properties": { "locations": "East Covina", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.297, 34.09] }, "properties": { "locations": "East Hollywood", "total_cases": 266, "case_rate": 908.0, "deaths": 39, "deaths_rate": 133.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.989, 33.924] }, "properties": { "locations": "East La Mirada", "total_cases": 25, "case_rate": 472.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.137, 34.698] }, "properties": { "locations": "East Lancaster", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.172, 34.024] }, "properties": { "locations": "East Los Angeles", "total_cases": 1831, "case_rate": 1462.0, "deaths": 48, "deaths_rate": 38.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.118, 34.145] }, "properties": { "locations": "East Pasadena", "total_cases": 4, "case_rate": 62.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.211, 33.86] }, "properties": { "locations": "East Rancho Dominguez", "total_cases": 125, "case_rate": 817.0, "deaths": 2, "deaths_rate": 13.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.989, 33.924] }, "properties": { "locations": "East Whittier", "total_cases": 17, "case_rate": 320.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.257, 34.078] }, "properties": { "locations": "Echo Park", "total_cases": 68, "case_rate": 477.0, "deaths": 1, "deaths_rate": 7.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.78, 34.076] }, "properties": { "locations": "El Camino Village", "total_cases": 64, "case_rate": 728.0, "deaths": 2, "deaths_rate": 23.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.037, 34.075] }, "properties": { "locations": "El Monte", "total_cases": 1024, "case_rate": 873.0, "deaths": 39, "deaths_rate": 33.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.416, 33.917] }, "properties": { "locations": "El Segundo", "total_cases": 41, "case_rate": 244.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.178, 34.081] }, "properties": { "locations": "El Sereno", "total_cases": 309, "case_rate": 739.0, "deaths": 18, "deaths_rate": 43.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Elizabeth Lake", "total_cases": 3, "case_rate": 181.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.239, 34.077] }, "properties": { "locations": "Elysian Park", "total_cases": 20, "case_rate": 350.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.242, 34.096] }, "properties": { "locations": "Elysian Valley", "total_cases": 81, "case_rate": 796.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.502, 34.159] }, "properties": { "locations": "Encino", "total_cases": 160, "case_rate": 354.0, "deaths": 15, "deaths_rate": 33.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.286, 34.016] }, "properties": { "locations": "Exposition", "total_cases": 16, "case_rate": 481.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.287, 34.014] }, "properties": { "locations": "Exposition Park", "total_cases": 372, "case_rate": 828.0, "deaths": 10, "deaths_rate": 22.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Faircrest Heights", "total_cases": 10, "case_rate": 278.0, "deaths": 1, "deaths_rate": 28.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Figueroa Park Square", "total_cases": 72, "case_rate": 826.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.305, 33.896] }, "properties": { "locations": "Gardena", "total_cases": 375, "case_rate": 612.0, "deaths": 28, "deaths_rate": 46.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.229, 34.116] }, "properties": { "locations": "Glassell Park", "total_cases": 241, "case_rate": 763.0, "deaths": 6, "deaths_rate": 19.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.248, 34.147] }, "properties": { "locations": "Glendale", "total_cases": 1209, "case_rate": 585.0, "deaths": 100, "deaths_rate": 48.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.865, 34.136] }, "properties": { "locations": "Glendora", "total_cases": 216, "case_rate": 409.0, "deaths": 9, "deaths_rate": 17.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.314, 33.868] }, "properties": { "locations": "Gramercy Place", "total_cases": 93, "case_rate": 864.0, "deaths": 2, "deaths_rate": 19.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.517, 34.266] }, "properties": { "locations": "Granada Hills", "total_cases": 460, "case_rate": 791.0, "deaths": 48, "deaths_rate": 82.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.263, 33.941] }, "properties": { "locations": "Green Meadows", "total_cases": 267, "case_rate": 1242.0, "deaths": 3, "deaths_rate": 14.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.969, 33.993] }, "properties": { "locations": "Hacienda Heights", "total_cases": 234, "case_rate": 418.0, "deaths": 3, "deaths_rate": 5.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.335, 34.074] }, "properties": { "locations": "Hancock Park", "total_cases": 99, "case_rate": 581.0, "deaths": 2, "deaths_rate": 12.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.3, 33.797] }, "properties": { "locations": "Harbor City", "total_cases": 154, "case_rate": 530.0, "deaths": 7, "deaths_rate": 24.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.299, 33.854] }, "properties": { "locations": "Harbor Gateway", "total_cases": 214, "case_rate": 491.0, "deaths": 7, "deaths_rate": 16.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.307, 33.783] }, "properties": { "locations": "Harbor Pines", "total_cases": 9, "case_rate": 374.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.716, 34.096] }, "properties": { "locations": "Harvard Heights", "total_cases": 184, "case_rate": 1020.0, "deaths": 15, "deaths_rate": 83.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.304, 33.984] }, "properties": { "locations": "Harvard Park", "total_cases": 476, "case_rate": 1255.0, "deaths": 7, "deaths_rate": 18.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.074, 33.828] }, "properties": { "locations": "Hawaiian Gardens", "total_cases": 129, "case_rate": 879.0, "deaths": 1, "deaths_rate": 7.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.348, 33.919] }, "properties": { "locations": "Hawthorne", "total_cases": 570, "case_rate": 642.0, "deaths": 21, "deaths_rate": 24.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.396, 33.864] }, "properties": { "locations": "Hermosa Beach", "total_cases": 48, "case_rate": 244.0, "deaths": 2, "deaths_rate": 10.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.777, 34.735] }, "properties": { "locations": "Hi Vista", "total_cases": 1, "case_rate": 91.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.658, 34.164] }, "properties": { "locations": "Hidden Hills", "total_cases": 3, "case_rate": 159.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.197, 34.11] }, "properties": { "locations": "Highland Park", "total_cases": 357, "case_rate": 738.0, "deaths": 1, "deaths_rate": 2.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.268, 34.07] }, "properties": { "locations": "Historic Filipinotown", "total_cases": 191, "case_rate": 1377.0, "deaths": 6, "deaths_rate": 43.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.33, 34.098] }, "properties": { "locations": "Hollywood", "total_cases": 365, "case_rate": 535.0, "deaths": 6, "deaths_rate": 9.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.336, 34.131] }, "properties": { "locations": "Hollywood Hills", "total_cases": 98, "case_rate": 333.0, "deaths": 5, "deaths_rate": 17.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.212, 33.983] }, "properties": { "locations": "Huntington Park", "total_cases": 843, "case_rate": 1417.0, "deaths": 16, "deaths_rate": 27.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.331, 33.981] }, "properties": { "locations": "Hyde Park", "total_cases": 210, "case_rate": 736.0, "deaths": 5, "deaths_rate": 18.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.886, 33.997] }, "properties": { "locations": "Industry", "total_cases": 12, "case_rate": 2746.0, "deaths": 2, "deaths_rate": 458.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.353, 33.956] }, "properties": { "locations": "Inglewood", "total_cases": 790, "case_rate": 696.0, "deaths": 58, "deaths_rate": 51.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.934, 34.107] }, "properties": { "locations": "Irwindale", "total_cases": 5, "case_rate": 343.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.318, 34.027] }, "properties": { "locations": "Jefferson Park", "total_cases": 73, "case_rate": 904.0, "deaths": 1, "deaths_rate": 12.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.305, 34.062] }, "properties": { "locations": "Koreatown", "total_cases": 388, "case_rate": 751.0, "deaths": 18, "deaths_rate": 35.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.201, 34.2] }, "properties": { "locations": "La Canada Flintridge", "total_cases": 65, "case_rate": 314.0, "deaths": 6, "deaths_rate": 29.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.95, 33.96] }, "properties": { "locations": "La Habra Heights", "total_cases": 12, "case_rate": 220.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.011, 33.906] }, "properties": { "locations": "La Mirada", "total_cases": 250, "case_rate": 504.0, "deaths": 19, "deaths_rate": 38.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.95, 34.02] }, "properties": { "locations": "La Puente", "total_cases": 256, "case_rate": 629.0, "deaths": 3, "deaths_rate": 7.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.284, 34.189] }, "properties": { "locations": "La Rambla", "total_cases": 45, "case_rate": 2169.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.768, 34.101] }, "properties": { "locations": "La Verne", "total_cases": 54, "case_rate": 162.0, "deaths": 2, "deaths_rate": 6.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.375, 33.994] }, "properties": { "locations": "Ladera Heights", "total_cases": 25, "case_rate": 354.0, "deaths": 1, "deaths_rate": 14.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Lafayette Square", "total_cases": 26, "case_rate": 570.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.495, 34.181] }, "properties": { "locations": "Lake Balboa", "total_cases": 265, "case_rate": 628.0, "deaths": 8, "deaths_rate": 19.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.449, 34.677] }, "properties": { "locations": "Lake Hughes", "total_cases": 1, "case_rate": 150.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.84, 34.613] }, "properties": { "locations": "Lake Los Angeles", "total_cases": 35, "case_rate": 269.0, "deaths": 2, "deaths_rate": 15.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Lake Manor", "total_cases": 5, "case_rate": 304.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.899, 34.14] }, "properties": { "locations": "Lakeview Terrace", "total_cases": 169, "case_rate": 1287.0, "deaths": 4, "deaths_rate": 30.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.117, 33.85] }, "properties": { "locations": "Lakewood", "total_cases": 302, "case_rate": 376.0, "deaths": 9, "deaths_rate": 11.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.137, 34.698] }, "properties": { "locations": "Lancaster", "total_cases": 821, "case_rate": 508.0, "deaths": 13, "deaths_rate": 8.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.353, 33.889] }, "properties": { "locations": "Lawndale", "total_cases": 166, "case_rate": 494.0, "deaths": 6, "deaths_rate": 18.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.332, 34.008] }, "properties": { "locations": "Leimert Park", "total_cases": 76, "case_rate": 499.0, "deaths": 2, "deaths_rate": 13.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.352, 33.939] }, "properties": { "locations": "Lennox", "total_cases": 153, "case_rate": 679.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.288, 34.618] }, "properties": { "locations": "Leona Valley", "total_cases": 4, "case_rate": 228.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.205, 34.071] }, "properties": { "locations": "Lincoln Heights", "total_cases": 402, "case_rate": 1233.0, "deaths": 24, "deaths_rate": 74.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.304, 34.098] }, "properties": { "locations": "Little Armenia", "total_cases": 232, "case_rate": 2891.0, "deaths": 40, "deaths_rate": 498.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.297, 34.069] }, "properties": { "locations": "Little Bangladesh", "total_cases": 200, "case_rate": 706.0, "deaths": 4, "deaths_rate": 14.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.241, 34.048] }, "properties": { "locations": "Little Tokyo", "total_cases": 33, "case_rate": 1053.0, "deaths": 2, "deaths_rate": 64.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.987, 34.521] }, "properties": { "locations": "Littlerock", "total_cases": 17, "case_rate": 423.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.818, 34.506] }, "properties": { "locations": "Llano", "total_cases": 1, "case_rate": 114.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.32, 33.804] }, "properties": { "locations": "Lomita", "total_cases": 61, "case_rate": 294.0, "deaths": 6, "deaths_rate": 29.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.426, 33.974] }, "properties": { "locations": "Longwood", "total_cases": 32, "case_rate": 743.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.289, 34.11] }, "properties": { "locations": "Los Feliz", "total_cases": 67, "case_rate": 310.0, "deaths": 1, "deaths_rate": 5.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.202, 33.925] }, "properties": { "locations": "Lynwood", "total_cases": 995, "case_rate": 1381.0, "deaths": 51, "deaths_rate": 71.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.689, 34.036] }, "properties": { "locations": "Malibu", "total_cases": 41, "case_rate": 316.0, "deaths": 1, "deaths_rate": 8.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.313, 33.966] }, "properties": { "locations": "Manchester Square", "total_cases": 34, "case_rate": 398.0, "deaths": 1, "deaths_rate": 12.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.495, 34.061] }, "properties": { "locations": "Mandeville Canyon", "total_cases": 3, "case_rate": 96.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.395, 33.892] }, "properties": { "locations": "Manhattan Beach", "total_cases": 93, "case_rate": 258.0, "deaths": 3, "deaths_rate": 8.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.439, 34.004] }, "properties": { "locations": "Mar Vista", "total_cases": 99, "case_rate": 233.0, "deaths": 5, "deaths_rate": 12.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.123, 33.749] }, "properties": { "locations": "Marina Peninsula", "total_cases": 15, "case_rate": 344.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.449, 33.978] }, "properties": { "locations": "Marina del Rey", "total_cases": 17, "case_rate": 181.0, "deaths": 1, "deaths_rate": 11.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.185, 33.987] }, "properties": { "locations": "Maywood", "total_cases": 483, "case_rate": 1722.0, "deaths": 13, "deaths_rate": 46.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.308, 34.086] }, "properties": { "locations": "Melrose", "total_cases": 716, "case_rate": 922.0, "deaths": 44, "deaths_rate": 57.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.349, 34.059] }, "properties": { "locations": "Miracle Mile", "total_cases": 50, "case_rate": 278.0, "deaths": 5, "deaths_rate": 28.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.467, 34.257] }, "properties": { "locations": "Mission Hills", "total_cases": 216, "case_rate": 895.0, "deaths": 10, "deaths_rate": 41.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.001, 34.148] }, "properties": { "locations": "Monrovia", "total_cases": 206, "case_rate": 531.0, "deaths": 26, "deaths_rate": 67.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.112, 34.016] }, "properties": { "locations": "Montebello", "total_cases": 636, "case_rate": 988.0, "deaths": 20, "deaths_rate": 31.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.13, 34.052] }, "properties": { "locations": "Monterey Park", "total_cases": 238, "case_rate": 382.0, "deaths": 10, "deaths_rate": 16.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.221, 34.099] }, "properties": { "locations": "Mt. Washington", "total_cases": 134, "case_rate": 555.0, "deaths": 4, "deaths_rate": 17.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.529, 34.38] }, "properties": { "locations": "Newhall", "total_cases": 1, "case_rate": 455.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.485, 34.243] }, "properties": { "locations": "North Hills", "total_cases": 636, "case_rate": 1033.0, "deaths": 25, "deaths_rate": 41.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.374, 34.173] }, "properties": { "locations": "North Hollywood", "total_cases": 959, "case_rate": 633.0, "deaths": 30, "deaths_rate": 20.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.137, 34.698] }, "properties": { "locations": "North Lancaster", "total_cases": 7, "case_rate": 584.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.067, 34.0] }, "properties": { "locations": "North Whittier", "total_cases": 25, "case_rate": 299.0, "deaths": 1, "deaths_rate": 12.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.109, 34.099] }, "properties": { "locations": "Northeast San Gabriel", "total_cases": 75, "case_rate": 312.0, "deaths": 5, "deaths_rate": 21.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.537, 34.235] }, "properties": { "locations": "Northridge", "total_cases": 459, "case_rate": 658.0, "deaths": 33, "deaths_rate": 47.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.085, 33.909] }, "properties": { "locations": "Norwalk", "total_cases": 787, "case_rate": 731.0, "deaths": 26, "deaths_rate": 24.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.526, 34.048] }, "properties": { "locations": "Pacific Palisades", "total_cases": 63, "case_rate": 296.0, "deaths": 3, "deaths_rate": 14.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.427, 34.263] }, "properties": { "locations": "Pacoima", "total_cases": 1065, "case_rate": 1383.0, "deaths": 19, "deaths_rate": 25.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Palisades Highlands", "total_cases": 8, "case_rate": 208.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.117, 34.579] }, "properties": { "locations": "Palmdale", "total_cases": 985, "case_rate": 620.0, "deaths": 20, "deaths_rate": 13.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.412, 34.025] }, "properties": { "locations": "Palms", "total_cases": 234, "case_rate": 533.0, "deaths": 23, "deaths_rate": 52.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.402, 33.787] }, "properties": { "locations": "Palos Verdes Estates", "total_cases": 47, "case_rate": 348.0, "deaths": 1, "deaths_rate": 7.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.371, 33.771] }, "properties": { "locations": "Palos Verdes Peninsula", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.445, 34.224] }, "properties": { "locations": "Panorama City", "total_cases": 1081, "case_rate": 1437.0, "deaths": 50, "deaths_rate": 66.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.171, 33.899] }, "properties": { "locations": "Paramount", "total_cases": 599, "case_rate": 1069.0, "deaths": 12, "deaths_rate": 21.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.355, 34.067] }, "properties": { "locations": "Park La Brea", "total_cases": 25, "case_rate": 184.0, "deaths": 1, "deaths_rate": 7.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Pellissier Village", "total_cases": 2, "case_rate": 323.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.097, 33.983] }, "properties": { "locations": "Pico Rivera", "total_cases": 738, "case_rate": 1148.0, "deaths": 34, "deaths_rate": 53.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.414, 34.381] }, "properties": { "locations": "Placerita Canyon", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.437, 33.955] }, "properties": { "locations": "Playa Del Rey", "total_cases": 5, "case_rate": 156.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.418, 33.976] }, "properties": { "locations": "Playa Vista", "total_cases": 39, "case_rate": 356.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.752, 34.055] }, "properties": { "locations": "Pomona", "total_cases": 934, "case_rate": 599.0, "deaths": 18, "deaths_rate": 12.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.561, 34.282] }, "properties": { "locations": "Porter Ranch", "total_cases": 116, "case_rate": 326.0, "deaths": 7, "deaths_rate": 20.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.218, 34.645] }, "properties": { "locations": "Quartz Hill", "total_cases": 50, "case_rate": 387.0, "deaths": 10, "deaths_rate": 77.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.211, 33.86] }, "properties": { "locations": "Rancho Dominguez", "total_cases": 22, "case_rate": 827.0, "deaths": 1, "deaths_rate": 38.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.371, 33.748] }, "properties": { "locations": "Rancho Palos Verdes", "total_cases": 116, "case_rate": 271.0, "deaths": 11, "deaths_rate": 26.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.425, 34.034] }, "properties": { "locations": "Rancho Park", "total_cases": 20, "case_rate": 305.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.389, 33.846] }, "properties": { "locations": "Redondo Beach", "total_cases": 166, "case_rate": 242.0, "deaths": 7, "deaths_rate": 10.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.447, 34.062] }, "properties": { "locations": "Regent Square", "total_cases": 12, "case_rate": 432.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.537, 34.2] }, "properties": { "locations": "Reseda", "total_cases": 792, "case_rate": 1034.0, "deaths": 42, "deaths_rate": 55.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.534, 34.285] }, "properties": { "locations": "Reseda Ranch", "total_cases": 34, "case_rate": 733.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Reynier Village", "total_cases": 17, "case_rate": 402.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.35, 33.767] }, "properties": { "locations": "Rolling Hills", "total_cases": 2, "case_rate": 103.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.358, 33.788] }, "properties": { "locations": "Rolling Hills Estates", "total_cases": 18, "case_rate": 222.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.304, 33.865] }, "properties": { "locations": "Roosevelt", "total_cases": 1, "case_rate": 107.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.088, 34.068] }, "properties": { "locations": "Rosemead", "total_cases": 175, "case_rate": 316.0, "deaths": 7, "deaths_rate": 13.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.361, 34.08] }, "properties": { "locations": "Rosewood", "total_cases": 8, "case_rate": 622.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.905, 33.976] }, "properties": { "locations": "Rowland Heights", "total_cases": 207, "case_rate": 406.0, "deaths": 4, "deaths_rate": 8.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.807, 34.107] }, "properties": { "locations": "San Dimas", "total_cases": 97, "case_rate": 281.0, "deaths": 2, "deaths_rate": 6.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.438, 34.285] }, "properties": { "locations": "San Fernando", "total_cases": 251, "case_rate": 1020.0, "deaths": 11, "deaths_rate": 45.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.109, 34.099] }, "properties": { "locations": "San Gabriel", "total_cases": 190, "case_rate": 464.0, "deaths": 20, "deaths_rate": 49.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.02, 33.946] }, "properties": { "locations": "San Jose Hills", "total_cases": 141, "case_rate": 697.0, "deaths": 3, "deaths_rate": 15.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.106, 34.122] }, "properties": { "locations": "San Marino", "total_cases": 24, "case_rate": 181.0, "deaths": 1, "deaths_rate": 8.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.102, 34.139] }, "properties": { "locations": "San Pasqual", "total_cases": 2, "case_rate": 98.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.292, 33.736] }, "properties": { "locations": "San Pedro", "total_cases": 1057, "case_rate": 1354.0, "deaths": 18, "deaths_rate": 23.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.414, 34.409] }, "properties": { "locations": "Sand Canyon", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.424, 33.389] }, "properties": { "locations": "Santa Catalina Island", "total_cases": 3, "case_rate": 1124.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.543, 34.392] }, "properties": { "locations": "Santa Clarita", "total_cases": 930, "case_rate": 422.0, "deaths": 22, "deaths_rate": 10.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.069, 33.948] }, "properties": { "locations": "Santa Fe Springs", "total_cases": 105, "case_rate": 572.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.497, 34.025] }, "properties": { "locations": "Santa Monica", "total_cases": 345, "case_rate": 373.0, "deaths": 23, "deaths_rate": 25.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Santa Monica Mountains", "total_cases": 30, "case_rate": 161.0, "deaths": 1, "deaths_rate": 5.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.517, 34.449] }, "properties": { "locations": "Saugus", "total_cases": 5, "case_rate": 3226.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.352, 34.262] }, "properties": { "locations": "Shadow Hills", "total_cases": 13, "case_rate": 293.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.449, 34.151] }, "properties": { "locations": "Sherman Oaks", "total_cases": 301, "case_rate": 345.0, "deaths": 13, "deaths_rate": 15.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.053, 34.162] }, "properties": { "locations": "Sierra Madre", "total_cases": 23, "case_rate": 209.0, "deaths": 2, "deaths_rate": 18.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.168, 33.805] }, "properties": { "locations": "Signal Hill", "total_cases": 57, "case_rate": 483.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.275, 34.085] }, "properties": { "locations": "Silverlake", "total_cases": 232, "case_rate": 526.0, "deaths": 14, "deaths_rate": 32.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "South Antelope Valley", "total_cases": 1, "case_rate": 220.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.373, 34.056] }, "properties": { "locations": "South Carthay", "total_cases": 42, "case_rate": 396.0, "deaths": 1, "deaths_rate": 9.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.047, 34.052] }, "properties": { "locations": "South El Monte", "total_cases": 191, "case_rate": 915.0, "deaths": 4, "deaths_rate": 19.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.201, 33.946] }, "properties": { "locations": "South Gate", "total_cases": 1170, "case_rate": 1192.0, "deaths": 27, "deaths_rate": 28.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.267, 34.04] }, "properties": { "locations": "South Park", "total_cases": 658, "case_rate": 1733.0, "deaths": 10, "deaths_rate": 26.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.148, 34.113] }, "properties": { "locations": "South Pasadena", "total_cases": 138, "case_rate": 530.0, "deaths": 21, "deaths_rate": 81.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.09, 34.063] }, "properties": { "locations": "South San Gabriel", "total_cases": 64, "case_rate": 723.0, "deaths": 4, "deaths_rate": 45.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.035, 33.944] }, "properties": { "locations": "South Whittier", "total_cases": 294, "case_rate": 496.0, "deaths": 7, "deaths_rate": 12.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Southeast Antelope Valley", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "St Elmo Village", "total_cases": 53, "case_rate": 1156.0, "deaths": 6, "deaths_rate": 131.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.583, 34.386] }, "properties": { "locations": "Stevenson Ranch", "total_cases": 43, "case_rate": 205.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.396, 34.148] }, "properties": { "locations": "Studio City", "total_cases": 91, "case_rate": 406.0, "deaths": 7, "deaths_rate": 31.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.37, 34.218] }, "properties": { "locations": "Sun Valley", "total_cases": 415, "case_rate": 791.0, "deaths": 9, "deaths_rate": 17.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.38, 34.225] }, "properties": { "locations": "Sun Village", "total_cases": 26, "case_rate": 431.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.302, 34.267] }, "properties": { "locations": "Sunland", "total_cases": 195, "case_rate": 956.0, "deaths": 19, "deaths_rate": 93.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.132, 34.673] }, "properties": { "locations": "Sunrise Village", "total_cases": 10, "case_rate": 772.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.466, 34.329] }, "properties": { "locations": "Sycamore Square", "total_cases": 1, "case_rate": 155.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.449, 34.308] }, "properties": { "locations": "Sylmar", "total_cases": 1075, "case_rate": 1305.0, "deaths": 50, "deaths_rate": 61.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.543, 34.171] }, "properties": { "locations": "Tarzana", "total_cases": 299, "case_rate": 968.0, "deaths": 22, "deaths_rate": 71.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.058, 34.108] }, "properties": { "locations": "Temple City", "total_cases": 199, "case_rate": 546.0, "deaths": 28, "deaths_rate": 77.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.305, 34.102] }, "properties": { "locations": "Thai Town", "total_cases": 47, "case_rate": 479.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.349, 34.147] }, "properties": { "locations": "Toluca Lake", "total_cases": 23, "case_rate": 264.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.35, 34.149] }, "properties": { "locations": "Toluca Terrace", "total_cases": 8, "case_rate": 613.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Toluca Woods", "total_cases": 3, "case_rate": 161.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.341, 33.836] }, "properties": { "locations": "Torrance", "total_cases": 471, "case_rate": 316.0, "deaths": 50, "deaths_rate": 33.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.288, 34.252] }, "properties": { "locations": "Tujunga", "total_cases": 150, "case_rate": 539.0, "deaths": 11, "deaths_rate": 40.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.177, 34.067] }, "properties": { "locations": "University Hills", "total_cases": 17, "case_rate": 496.0, "deaths": 1, "deaths_rate": 29.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.886, 34.128] }, "properties": { "locations": "University Park", "total_cases": 291, "case_rate": 1060.0, "deaths": 5, "deaths_rate": 18.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.654, 34.445] }, "properties": { "locations": "Val Verde", "total_cases": 23, "case_rate": 695.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.561, 34.414] }, "properties": { "locations": "Valencia", "total_cases": 12, "case_rate": 391.0, "deaths": 1, "deaths_rate": 33.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.934, 34.038] }, "properties": { "locations": "Valinda", "total_cases": 180, "case_rate": 770.0, "deaths": 1, "deaths_rate": 4.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.414, 34.183] }, "properties": { "locations": "Valley Glen", "total_cases": 179, "case_rate": 596.0, "deaths": 9, "deaths_rate": 30.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.397, 34.164] }, "properties": { "locations": "Valley Village", "total_cases": 252, "case_rate": 1019.0, "deaths": 19, "deaths_rate": 77.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.449, 34.187] }, "properties": { "locations": "Van Nuys", "total_cases": 1011, "case_rate": 1085.0, "deaths": 38, "deaths_rate": 41.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.467, 33.995] }, "properties": { "locations": "Venice", "total_cases": 77, "case_rate": 227.0, "deaths": 2, "deaths_rate": 6.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.292, 33.967] }, "properties": { "locations": "Vermont Knolls", "total_cases": 256, "case_rate": 1488.0, "deaths": 4, "deaths_rate": 23.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.296, 34.0] }, "properties": { "locations": "Vermont Square", "total_cases": 126, "case_rate": 1646.0, "deaths": 2, "deaths_rate": 26.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.286, 33.942] }, "properties": { "locations": "Vermont Vista", "total_cases": 576, "case_rate": 1399.0, "deaths": 10, "deaths_rate": 24.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.23, 34.004] }, "properties": { "locations": "Vernon", "total_cases": 5, "case_rate": 2392.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.225, 34.007] }, "properties": { "locations": "Vernon Central", "total_cases": 999, "case_rate": 1921.0, "deaths": 15, "deaths_rate": 29.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.331, 34.047] }, "properties": { "locations": "Victoria Park", "total_cases": 74, "case_rate": 881.0, "deaths": 2, "deaths_rate": 24.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.348, 33.984] }, "properties": { "locations": "View Heights", "total_cases": 11, "case_rate": 298.0, "deaths": 2, "deaths_rate": 54.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.865, 34.02] }, "properties": { "locations": "Walnut", "total_cases": 66, "case_rate": 216.0, "deaths": 1, "deaths_rate": 3.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.22, 33.969] }, "properties": { "locations": "Walnut Park", "total_cases": 200, "case_rate": 1239.0, "deaths": 4, "deaths_rate": 25.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.243, 33.941] }, "properties": { "locations": "Watts", "total_cases": 508, "case_rate": 1190.0, "deaths": 11, "deaths_rate": 26.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Wellington Square", "total_cases": 35, "case_rate": 712.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.352, 34.029] }, "properties": { "locations": "West Adams", "total_cases": 335, "case_rate": 1212.0, "deaths": 22, "deaths_rate": 80.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "West Antelope Valley", "total_cases": 2, "case_rate": 132.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.293, 33.822] }, "properties": { "locations": "West Carson", "total_cases": 133, "case_rate": 602.0, "deaths": 11, "deaths_rate": 50.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.939, 34.069] }, "properties": { "locations": "West Covina", "total_cases": 589, "case_rate": 544.0, "deaths": 9, "deaths_rate": 8.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.645, 34.203] }, "properties": { "locations": "West Hills", "total_cases": 182, "case_rate": 449.0, "deaths": 21, "deaths_rate": 52.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.369, 34.092] }, "properties": { "locations": "West Hollywood", "total_cases": 210, "case_rate": 568.0, "deaths": 4, "deaths_rate": 11.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.321, 34.086] }, "properties": { "locations": "West LA", "total_cases": 24, "case_rate": 2521.0, "deaths": 2, "deaths_rate": 210.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.448, 34.046] }, "properties": { "locations": "West Los Angeles", "total_cases": 112, "case_rate": 298.0, "deaths": 6, "deaths_rate": 16.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.965, 34.05] }, "properties": { "locations": "West Puente Valley", "total_cases": 63, "case_rate": 641.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.211, 33.86] }, "properties": { "locations": "West Rancho Dominguez", "total_cases": 10, "case_rate": 736.0, "deaths": 1, "deaths_rate": 74.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.28, 34.005] }, "properties": { "locations": "West Vernon", "total_cases": 715, "case_rate": 1333.0, "deaths": 22, "deaths_rate": 41.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.4, 33.954] }, "properties": { "locations": "Westchester", "total_cases": 127, "case_rate": 246.0, "deaths": 11, "deaths_rate": 21.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "Westhills", "total_cases": 0, "case_rate": 0.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.273, 34.063] }, "properties": { "locations": "Westlake", "total_cases": 1124, "case_rate": 1894.0, "deaths": 93, "deaths_rate": 157.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.806, 34.146] }, "properties": { "locations": "Westlake Village", "total_cases": 7, "case_rate": 84.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.44, 34.067] }, "properties": { "locations": "Westwood", "total_cases": 97, "case_rate": 179.0, "deaths": 5, "deaths_rate": 9.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [0.0, 0.0] }, "properties": { "locations": "White Fence Farms", "total_cases": 16, "case_rate": 434.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.031, 33.971] }, "properties": { "locations": "Whittier", "total_cases": 485, "case_rate": 555.0, "deaths": 12, "deaths_rate": 14.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.235, 34.037] }, "properties": { "locations": "Wholesale District", "total_cases": 965, "case_rate": 2671.0, "deaths": 8, "deaths_rate": 22.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.234, 33.919] }, "properties": { "locations": "Willowbrook", "total_cases": 400, "case_rate": 1146.0, "deaths": 9, "deaths_rate": 26.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.263, 33.78] }, "properties": { "locations": "Wilmington", "total_cases": 419, "case_rate": 742.0, "deaths": 5, "deaths_rate": 9.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.433, 34.062] }, "properties": { "locations": "Wilshire Center", "total_cases": 355, "case_rate": 708.0, "deaths": 21, "deaths_rate": 42.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.571, 34.206] }, "properties": { "locations": "Winnetka", "total_cases": 381, "case_rate": 736.0, "deaths": 4, "deaths_rate": 8.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.375, 33.913] }, "properties": { "locations": "Wiseburn", "total_cases": 24, "case_rate": 398.0, "deaths": 0, "deaths_rate": 0.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.606, 34.168] }, "properties": { "locations": "Woodland Hills", "total_cases": 216, "case_rate": 317.0, "deaths": 14, "deaths_rate": 21.0 } }, { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-118.144, 34.148] }, "properties": { "locations": "Pasadena", "total_cases": 1083, "case_rate": null, "deaths": null, "deaths_rate": null } }] },
-                "buffer": 1,
-                "maxzoom": 14,
-                "generateId": true
-            });
-
-            map.addLayer({
-                "id": "label",
-                "source": "data",
-                "type": "symbol",
-                "maxzoom": 24,
-                "minzoom": 0,
-                "layout": {
-
+        map.addLayer({
+            "id": "label",
+            "source": "data",
+            "type": "symbol",
+            "maxzoom": 24,
+            "minzoom": 0,
+            "layout": {
+                
                     "text-field": "{total_cases}",
-
-                    "text-size": generateInterpolateExpression('zoom', [[0, 10], [22, 3 * 10]]),
-                    "text-offset": [0, -1]
-                },
-                "paint": {
-                    "text-halo-color": "#ffffff",
-                    "text-halo-width": generatePropertyExpression('interpolate', 'zoom', [[0, 1], [18, 5 * 1]]),
-                    "text-color": ["case",
-                        ["boolean", ["feature-state", "hover"], false],
-                        "black",
-                        "#191925"]
-                }
-            }, "")
-
-            map.addLayer({
-                "id": "circle",
-                "source": "data",
-                "type": "circle",
-                "maxzoom": 24,
-                "minzoom": 0,
-                "paint": {
-
+                
+                "text-size" : generateInterpolateExpression('zoom', [[0, 10],[22, 3* 10]] ),
+                "text-offset": [0,-1]
+            },
+            "paint": {
+                "text-halo-color": "#ffffff",
+                "text-halo-width": generatePropertyExpression('interpolate', 'zoom', [[0,1], [18,5* 1]]),
+                "text-color": ["case",
+                    ["boolean", ["feature-state", "hover"], false], 
+                    "black", 
+                    "#191925"]
+            }
+        }, "" )
+        
+        map.addLayer({
+            "id": "circle",
+            "source": "data",
+            "type": "circle",
+            "maxzoom": 24,
+            "minzoom": 0,
+            "paint": {
+                
                     "circle-color": ["case",
-                        ["boolean", ["feature-state", "hover"], false],
+                        ["boolean", ["feature-state", "hover"], false], 
                         "black",
-                        generatePropertyExpression("interpolate", "total_cases", [[0, 'rgb(255,255,217)'], [50, 'rgb(237,248,177)'], [100, 'rgb(199,233,180)'], [250, 'rgb(127,205,187)'], [500, 'rgb(65,182,196)'], [1000, 'rgb(29,145,192)'], [1500, 'rgb(34,94,168)'], [2000, 'rgb(12,44,132)']], "grey")],
+                        generatePropertyExpression("interpolate", "total_cases", [[0, 'rgb(255,255,217)'], [50, 'rgb(237,248,177)'], [100, 'rgb(199,233,180)'], [250, 'rgb(127,205,187)'], [500, 'rgb(65,182,196)'], [1000, 'rgb(29,145,192)'], [1500, 'rgb(34,94,168)'], [2000, 'rgb(12,44,132)']], "grey" )],
+                    
+                "circle-radius" : generatePropertyExpression('interpolate', 'zoom', [[0,4], [22,10 * 4]]),
+                "circle-stroke-color": ["case",
+                    ["boolean", ["feature-state", "hover"], false], 
+                    "black", 
+                    "#191925"],
+                "circle-stroke-width": generatePropertyExpression('interpolate', 'zoom', [[0,0.5], [18,5* 0.5]]),
+                "circle-opacity" : 1,
+                "circle-stroke-opacity" : 1
+            }
+        }, "label");
+        
+        
 
-                    "circle-radius": generatePropertyExpression('interpolate', 'zoom', [[0, 4], [22, 10 * 4]]),
-                    "circle-stroke-color": ["case",
-                        ["boolean", ["feature-state", "hover"], false],
-                        "black",
-                        "#191925"],
-                    "circle-stroke-width": generatePropertyExpression('interpolate', 'zoom', [[0, 0.5], [18, 5 * 0.5]]),
-                    "circle-opacity": 1,
-                    "circle-stroke-opacity": 1
-                }
-            }, "label");
-
-
-
-            // Popups
-
+        // Popups
+        
             var popupAction = 'mousemove',
-                popupSettings = {
+                popupSettings =  {
                     closeButton: false,
                     closeOnClick: false
                 };
+        
 
+        // Create a popup
+        var popup = new mapboxgl.Popup(popupSettings);
 
-            // Create a popup
-            var popup = new mapboxgl.Popup(popupSettings);
+        
 
+        var hoveredStateId = 0;
+        
+        // Show the popup on mouseover
+        map.on(popupAction, function(e) {
+            
+            var features = map.queryRenderedFeatures(e.point, {layers: ['circle', 'label'] });
 
-
-            var hoveredStateId = 0;
-
-            // Show the popup on mouseover
-            map.on(popupAction, function (e) {
-
-                var features = map.queryRenderedFeatures(e.point, { layers: ['circle', 'label'] });
-
-                if (features.length > 0) {
-                    map.getCanvas().style.cursor = 'pointer';
-                    var f = features[0];
-                    newHoveredStateId = f.id;
-                    if (newHoveredStateId != hoveredStateId) {
-                        map.removeFeatureState({ source: 'data', id: hoveredStateId });
-                        hoveredStateId = newHoveredStateId;
-                    }
-                    map.setFeatureState({ source: 'data', id: hoveredStateId }, { hover: true });
-                    let popup_html = '<div><li><b>Location</b>: ' + f.geometry.coordinates[0].toPrecision(6) +
-                        ', ' + f.geometry.coordinates[1].toPrecision(6) + '</li>';
-
-                    for (key in f.properties) {
-                        popup_html += '<li><b> ' + key + '</b>: ' + f.properties[key] + ' </li>'
-                    }
-
-                    popup_html += '</div>'
-                    popup.setLngLat(e.lngLat)
-                        .setHTML(popup_html)
-                        .addTo(map);
+            if (features.length > 0) {
+                map.getCanvas().style.cursor = 'pointer';
+                var f = features[0];
+                newHoveredStateId = f.id;
+                if (newHoveredStateId != hoveredStateId) {
+                    map.removeFeatureState({source: 'data', id: hoveredStateId});
+                    hoveredStateId = newHoveredStateId;
                 }
-                else {
-                    map.getCanvas().style.cursor = '';
-                    popup.remove();
-                    map.removeFeatureState({ source: 'data', id: hoveredStateId });
+                map.setFeatureState({source: 'data', id: hoveredStateId}, { hover: true});
+                let popup_html = '<div><li><b>Location</b>: ' + f.geometry.coordinates[0].toPrecision(6) + 
+                    ', ' + f.geometry.coordinates[1].toPrecision(6) + '</li>';
+
+                for (key in f.properties) {
+                    popup_html += '<li><b> ' + key + '</b>: ' + f.properties[key] + ' </li>'
                 }
-            });
 
-
-
-            // Fly to on click
-            map.on('click', 'circle', function (e) {
-                map.easeTo({
-                    center: e.features[0].geometry.coordinates
-                });
-            });
+                popup_html += '</div>'
+                popup.setLngLat(e.lngLat)
+                    .setHTML(popup_html)
+                    .addTo(map);
+            }
+            else {
+                map.getCanvas().style.cursor = '';
+                popup.remove();
+                map.removeFeatureState({source: 'data', id: hoveredStateId});
+            }
         });
 
+        
+        
+        // Fly to on click
+        map.on('click', 'circle', function(e) {
+            map.easeTo({
+                center: e.features[0].geometry.coordinates
+            });
+        });
+    });
 
 
-    </script>
 
-    <!-- add capability to export map or legend to image file -->
+</script>
+
+<!-- add capability to export map or legend to image file -->
 
 
 </body>
-
 </html>
